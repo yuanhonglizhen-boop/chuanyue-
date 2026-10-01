@@ -5,12 +5,13 @@ import {createMascot,CHARACTERS,CHARACTER_ORDER} from './mascot.js';
 import {createKit} from './kit.js';
 import {buildKan} from './levels/kan.js';
 import {buildLi} from './levels/li.js';
+import {buildJiji} from './levels/jiji.js';
 import {LORE,TRIGRAMS,ABOUT,WORLD_ORDER} from './lore.js';
 import {CODEX,loadSave,writeSave} from './codex.js';
 import {createAudio} from './audio.js';
 
 const $=id=>document.getElementById(id);
-const LEVELS=[buildKan,buildLi];
+const LEVELS=[buildKan,buildLi,buildJiji];const LEVEL_IDS=['kan','li','jiji'];
 const save=loadSave();
 
 // ---------- 渲染器 ----------
@@ -22,7 +23,7 @@ const camera=new THREE.PerspectiveCamera(46,1,.1,600);
 const sfx=createAudio();sfx.setMuted(!save.sfx);sfx.setMusicMuted(!save.music);
 
 // ---------- 状态 ----------
-const game={mode:'title',levelIndex:0,level:null,startedAt:0,levelTime:0,gemsByLevel:[0,0],cleared:[false,false],starsRun:[null,null],time:0,toastUntil:0,lastGateHint:0,falls:0,levelFalls:0,challenge:save.challenge};
+const game={mode:'title',levelIndex:0,level:null,startedAt:0,levelTime:0,gemsByLevel:[0,0,0],cleared:[false,false,false],starsRun:[null,null,null],form:'normal',time:0,toastUntil:0,lastGateHint:0,falls:0,levelFalls:0,challenge:save.challenge};
 let scene,physics,world,kit,ctrl,mascot,shadowBlob,sun,hemi,envMap;
 const cam={yaw:0,pitch:.42,dist:9,targetYaw:0,targetPitch:.42,targetDist:9,focus:new THREE.Vector3()};
 
@@ -46,6 +47,11 @@ function selectCharacter(kind){
   $('char-desc').textContent=CHARACTERS[kind].name+'：'+CHARACTERS[kind].desc;
 }
 
+// ---------- 水火变身 ----------
+const FORM_ORDER=['normal','water','fire'],FORM_NAME={normal:'原形',water:'水态',fire:'火态'};
+function setForm(f){if(!game.level?.forms)f='normal';game.form=f;mascot?.setForm(f);if(physics)physics.state.form=f;const el=$('form');el.dataset.form=f;el.querySelector('b').textContent=FORM_NAME[f];}
+function cycleForm(){if(game.mode!=='play'||!game.level.forms)return;const f=FORM_ORDER[(FORM_ORDER.indexOf(game.form)+1)%3];setForm(f);sfx.toggle(f!=='normal');burst(new THREE.Vector3(ctrl.p.x,ctrl.p.y+.5,ctrl.p.z),{color:f==='water'?'#bfe6ff':f==='fire'?'#ffc58a':'#ffffff',n:14,speed:2,up:1.5});mascot.impulse(-2.5);}
+
 // ---------- 关卡加载 ----------
 function loadLevel(i){
   if(scene){scene.traverse(o=>{o.geometry?.dispose?.();});}
@@ -61,14 +67,14 @@ function loadLevel(i){
     onHop:()=>{mascot.impulse(1.2);sfx.hop();},
     onJump:(n)=>{mascot.impulse(n===1?2.6:3.2);sfx.jump(n);if(n===2)burst(new THREE.Vector3(ctrl.p.x,ctrl.p.y+.2,ctrl.p.z),{color:'#e9fff6',n:8,speed:1.6,up:.5,life:.45,size:.3,gravity:0});},
     onLand:(col,impact,hop)=>{mascot.impulse(-Math.min(6,impact*.62));if(!hop&&impact>5){sfx.land(impact);burst(new THREE.Vector3(ctrl.p.x,ctrl.p.y+.05,ctrl.p.z),{color:'#f4ead2',n:8,speed:2,up:.8,life:.4,size:.3});}if(col.bounce){sfx.bounce();burst(new THREE.Vector3(col.x,col.top+.2,col.z),{color:'#ffffff',n:14,speed:2.5,up:1});}game.level?.onLand?.(col,impact);}});
-  const ctx={world,kit,physics,scene,toast,sfx,rng,burst,get mascot(){return mascot;},openLore,unlock,challenge:game.challenge};
+  const ctx={world,kit,physics,scene,toast,sfx,rng,burst,get mascot(){return mascot;},get player(){return ctrl.p;},getForm:()=>game.form,setForm,openLore,unlock,challenge:game.challenge};
   game.level=LEVELS[i](ctx);
   const L=game.level;mascot.setTrigram(L.lines);
   ctrl.place(L.spawn.x,L.spawn.y,L.spawn.z,L.spawn.yaw);
   cam.yaw=cam.targetYaw=L.camYaw;cam.focus.set(L.spawn.x,L.spawn.y+1,L.spawn.z);
   game.levelTime=0;game.gemsByLevel[i]=0;game.levelFalls=0;game.timeLimit=game.challenge?L.timeLimit:0;
   $('level-glyph').innerHTML=glyph(L.lines);$('level-title').textContent=L.title;$('level-sub').textContent=L.subtitle;
-  document.body.dataset.level=L.id;$('timer').hidden=!game.challenge;
+  document.body.dataset.level=L.id;$('timer').hidden=!game.challenge;$('form').hidden=!L.forms;document.body.classList.toggle('forms',!!L.forms);setForm('normal');
   if(game.mode!=='title'){sfx.playTheme(L.id);sfx.setLayer(2);}
   updateHud(true);
 }
@@ -78,6 +84,7 @@ const keys=new Set();let jumpPressed=false;const joy={x:0,z:0,active:false};
 addEventListener('keydown',e=>{if(e.target.closest?.('dialog'))return;keys.add(e.code);
   if((e.code==='Space'||e.code==='KeyK')&&!e.repeat){jumpPressed=true;e.preventDefault();}
   if(e.code==='KeyE'&&!e.repeat)interact();
+  if(e.code==='KeyF'&&!e.repeat)cycleForm();
   if(e.code==='Escape')closeDialogs();});
 addEventListener('keyup',e=>keys.delete(e.code));
 addEventListener('blur',()=>keys.clear());
@@ -99,15 +106,16 @@ pad.addEventListener('pointermove',e=>{if(e.pointerId===padId)padMove(e);});
 const padEnd=()=>{padId=null;joy.active=false;joy.x=joy.z=0;knob.style.transform='';};pad.addEventListener('pointerup',padEnd);pad.addEventListener('pointercancel',padEnd);
 $('btn-jump').addEventListener('pointerdown',e=>{e.preventDefault();jumpPressed=true;});
 $('btn-act').addEventListener('pointerdown',e=>{e.preventDefault();interact();});
+$('btn-form').addEventListener('pointerdown',e=>{e.preventDefault();cycleForm();});$('form').addEventListener('click',cycleForm);
 
 // ---------- 交互 ----------
-function nearestInteractable(){const p=ctrl.p;let best=null,bd=2.3;for(const it of game.level.interactables){const d=Math.hypot(p.x-it.pos.x,p.z-it.pos.z);if(d<bd&&Math.abs(p.y-it.pos.y)<2){bd=d;best=it;}}return best;}
+function nearestInteractable(){const p=ctrl.p;let best=null,bd=2.3,fallback=null;for(const it of game.level.interactables){if(it.far){fallback=it;continue;}const d=Math.hypot(p.x-it.pos.x,p.z-it.pos.z);if(d<bd&&Math.abs(p.y-it.pos.y)<2){bd=d;best=it;}}return best||fallback;}
 function interact(){if(game.mode!=='play')return;const it=nearestInteractable();if(it)it.act();}
 
 // ---------- 对话框 ----------
-function glyph(lines,cls=''){return '<span class="glyph '+cls+'">'+lines.slice().reverse().map(y=>'<i class="'+(y?'yang':'yin')+'"><b></b><b></b></i>').join('')+'</span>';}
+function glyph(lines,cls=''){if(lines.length>3&&!cls.includes('hex'))cls+=' hex';return '<span class="glyph '+cls+'">'+lines.slice().reverse().map(y=>'<i class="'+(y?'yang':'yin')+'"><b></b><b></b></i>').join('')+'</span>';}
 function openLore(id){
-  const L=LORE[id],T=TRIGRAMS[L.trigram];unlock(id);
+  const L=LORE[id],T=L.lines?{lines:L.lines,name:L.name,image:L.image}:TRIGRAMS[L.trigram];if(id!=='jiji')unlock(id);
   $('lore-title').innerHTML=glyph(T.lines,'big')+'<span>'+T.name+' · '+T.image+'<small>'+L.hexagram+'</small></span>';
   $('lore-quotes').innerHTML=L.quotes.map(q=>'<li><q>'+q.text+'</q><cite>'+q.src+(q.note?'　<em>'+q.note+'</em>':'')+'</cite></li>').join('');
   $('lore-rule').textContent=L.rule;$('lore').showModal();sfx.ui();
@@ -141,10 +149,10 @@ document.querySelectorAll('dialog').forEach(d=>d.querySelectorAll('[data-close]'
 function setChallenge(on){game.challenge=on;save.challenge=on;persist();document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.mode==='challenge')===on)));$('mode-desc').textContent=on?'挑战：每境限时；落水回到本境起点；火种只燃 18 秒。':'普通：落水回到最近站稳处，不限时。';}
 document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{setChallenge(b.dataset.mode==='challenge');sfx.ui();});
 document.querySelectorAll('[data-char]').forEach(b=>b.onclick=()=>{sfx.unlock();selectCharacter(b.dataset.char);});
-function startGame(i=0){sfx.unlock();$('title').hidden=true;$('end').hidden=true;$('clear').hidden=true;document.body.classList.remove('titling');camera.clearViewOffset();game.mode='play';game.startedAt=performance.now();game.cleared=[false,false];game.starsRun=[null,null];game.gemsByLevel=[0,0];
+function startGame(i=0){sfx.unlock();$('title').hidden=true;$('end').hidden=true;$('clear').hidden=true;document.body.classList.remove('titling');camera.clearViewOffset();game.mode='play';game.startedAt=performance.now();game.cleared=[false,false,false];game.starsRun=[null,null,null];game.gemsByLevel=[0,0,0];
   cam.targetDist=cam.dist=9;cam.targetPitch=cam.pitch=.42;loadLevel(i);showLevelCard();}
 $('btn-start').onclick=()=>startGame(0);
-function renderChapterStars(){document.querySelectorAll('[data-chapter]').forEach(b=>{const id=['kan','li'][b.dataset.chapter],s=save.stars[id]||0;b.querySelector('.stars').textContent='★'.repeat(s)+'☆'.repeat(3-s);});}
+function renderChapterStars(){document.querySelectorAll('[data-chapter]').forEach(b=>{const id=LEVEL_IDS[b.dataset.chapter],s=save.stars[id]||0;b.querySelector('.stars').textContent='★'.repeat(s)+'☆'.repeat(3-s);});}
 document.querySelectorAll('[data-chapter]').forEach(b=>b.onclick=()=>startGame(Number(b.dataset.chapter)));
 function showLevelCard(){const L=game.level;$('card-glyph').innerHTML=glyph(L.lines,'big');$('card-title').textContent=L.title;$('card-sub').textContent=L.subtitle;const c=$('card');c.classList.remove('show');void c.offsetWidth;c.classList.add('show');}
 function fmt(s){s=Math.max(0,Math.round(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
@@ -168,9 +176,9 @@ function nextLevel(){
 }
 function showEnd(){
   game.mode='end';sfx.playTheme('end');sfx.setLayer(2);const secs=(performance.now()-game.startedAt)/1000;
-  $('end-time').textContent=fmt(secs);$('end-gems').textContent=game.gemsByLevel.reduce((a,b)=>a+b,0)+' / 12';$('end-stars').textContent=game.starsRun.reduce((a,b)=>a+(b||0),0)+' / 6';
+  $('end-time').textContent=fmt(secs);$('end-gems').textContent=game.gemsByLevel.reduce((a,b)=>a+b,0)+' / 18';$('end-stars').textContent=game.starsRun.reduce((a,b)=>a+(b||0),0)+' / 9';
   $('end-map').innerHTML=WORLD_ORDER.map((id,k)=>{const T=TRIGRAMS[id],a=k/8*Math.PI*2,x=50+Math.sin(a)*38,y=50-Math.cos(a)*38,done=(id==='kan'&&game.cleared[0])||(id==='li'&&game.cleared[1]);
-    return '<div class="node'+(done?' done':'')+'" style="left:'+x+'%;top:'+y+'%">'+glyph(T.lines)+'<b>'+T.name+'</b><small>'+T.image+' · '+T.dir+'</small></div>';}).join('')+'<div class="hub">后天八卦方位<br><small>北在上</small></div>';
+    return '<div class="node'+(done?' done':'')+'" style="left:'+x+'%;top:'+y+'%">'+glyph(T.lines)+'<b>'+T.name+'</b><small>'+T.image+' · '+T.dir+'</small></div>';}).join('')+'<div class="hub">'+(game.cleared[2]?glyph([1,0,1,0,1,0])+'<br>既济 · 水在火上<br>':'')+'后天八卦方位<br><small>北在上</small></div>';
   $('end').hidden=false;
 }
 $('btn-again').onclick=()=>{showTitle();};
@@ -238,7 +246,7 @@ addEventListener('pointerdown',()=>sfx.unlock(),{once:true});addEventListener('k
 // 测试接口：确定性推进，不依赖帧率
 window.__Q={
   get game(){return game;},get level(){return game.level;},get player(){return ctrl.p;},get mascot(){return mascot;},get physics(){return physics;},camera,renderer,cam,save,sfx,
-  start:startGame,loadLevel,selectCharacter,openCodex,unlock,setChallenge,showTitle,
+  start:startGame,loadLevel,selectCharacter,openCodex,unlock,setChallenge,showTitle,setForm,cycleForm,nearestInteractable,
   step(seconds,{keys:k=[],jump=false,move=null,draw=true}={}){k.forEach(c=>keys.add(c));testMove=move;let first=true;for(let t=0;t<seconds-1e-9;t+=FIXED){if(first&&jump)jumpPressed=true;first=false;step(FIXED);}testMove=null;k.forEach(c=>keys.delete(c));if(draw){render(1/60);updateHud(true);}},
   jump(){jumpPressed=true;},interact,
   teleport(x,y,z){ctrl.place(x,y,z);},

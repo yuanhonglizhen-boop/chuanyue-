@@ -9,33 +9,7 @@ const root=path.join(__dirname,'..'),out=path.join(root,'docs','verification'),p
 const report={time:new Date().toISOString(),checks:[]};
 const check=(name,ok,detail)=>{report.checks.push({name,ok:!!ok,detail});console.log((ok?'PASS ':'FAIL ')+name+(detail!==undefined?'  '+JSON.stringify(detail):''));return ok;};
 
-// 在页面里跑一段路线。每个航点：{x,z,jump,dj,tol,max,until}
-async function route(p,points,label){
-  for(const [i,w] of points.entries()){
-    const r=await p.evaluate(async(w)=>{
-      const Q=__Q,P=Q.player,start=Q.game.time,tol=w.tol??.45,max=w.max??12,falls0=Q.game.falls;
-      const dir=()=>{const dx=w.x-P.x,dz=w.z-P.z,l=Math.hypot(dx,dz)||1;return {x:dx/l,z:dz/l,l};};
-      if(w.waitLift){while(Q.game.time-start<20){const top=Q.level._liftTop();if(top<.45)break;Q.step(.05,{draw:false});}}
-      if(w.waitLiftTop){while(Q.game.time-start<20){const top=Q.level._liftTop();if(top>3.25)break;Q.step(.05,{draw:false});}}
-      if(w.waitSlider){while(Q.game.time-start<20){if(Q.level._sliderX()>.45&&Q.level._sliderX()<.75)break;Q.step(1/60,{draw:false});}}
-      if(w.onSlider)w.x=Q.level._sliderX();
-      if(w.jump){const d=dir();Q.step(1/120,{jump:true,move:d,draw:false});}
-      let dj=!!w.dj;
-      while(Q.game.time-start<max){
-        if(w.onSlider)w.x=Q.level._sliderX();
-        const d=dir();
-        if(dj&&Q.game.time-start>.24){Q.step(1/120,{jump:true,move:d,draw:false});dj=false;continue;}
-        if(Q.game.falls>falls0)return {ok:false,why:'fell',pos:[P.x,P.y,P.z]};
-        if(w.until){if(eval(w.until))return {ok:true,t:Q.game.time-start,pos:[P.x,P.y,P.z]};}
-        else if(d.l<tol&&P.grounded&&(w.minY===undefined||P.y>w.minY))return {ok:true,t:Q.game.time-start,pos:[+P.x.toFixed(2),+P.y.toFixed(2),+P.z.toFixed(2)]};
-        Q.step(1/60,{move:d.l<tol?{x:0,z:0}:d,draw:false});
-      }
-      return {ok:false,why:'timeout',pos:[P.x,P.y,P.z]};
-    },w);
-    if(!r.ok){check(`${label}: 航点 ${i} (${w.x},${w.z}) 到达`,false,r);return false;}
-  }
-  check(`${label}: 全部 ${points.length} 个航点到达（无瞬移、无落水）`,true);return true;
-}
+const {route:runRoute}=require('./route.cjs');const {runJiji}=require('./verify-jiji.cjs');const route=(p,points,label)=>runRoute(p,points,label,check);
 
 (async()=>{
   const server=spawn(process.execPath,[path.join(root,'server.cjs')],{cwd:root,stdio:['ignore','pipe','inherit']});
@@ -126,13 +100,21 @@ async function route(p,points,label){
       await p.evaluate(()=>{__Q.cam.targetYaw=__Q.cam.yaw=.2;__Q.step(.3);});await p.screenshot({path:path.join(out,'09-li-gate.png')});
       await p.evaluate(()=>{const Q=__Q;for(let i=0;i<300&&Q.game.mode==='play';i++){const P=Q.player,dx=15.3-P.x,dz=-20.6-P.z,l=Math.hypot(dx,dz)||1;Q.step(1/60,{move:{x:dx/l,z:dz/l},draw:false});}});
       await p.waitForFunction(()=>__Q.game.mode==='clear',null,{timeout:60000});await p.click('#btn-next');
+      // 第三境：水火既济
+      await p.waitForFunction(()=>__Q.game.levelIndex===2&&__Q.game.mode==='play',null,{timeout:60000});await p.waitForTimeout(800);
+      check('第三境：进入，音乐切换为既济主题（羽调 / 徵调交替）',await p.evaluate(()=>__Q.sfx._debug().themeName==='jiji'));
+      await p.evaluate(()=>__Q.step(.6));await p.screenshot({path:path.join(out,'j0-start.png')});
+      await runJiji(p,check,async n=>{await p.evaluate(()=>__Q.step(.05));await p.screenshot({path:path.join(out,n+'.png')});});
+      await p.waitForFunction(()=>__Q.game.mode==='clear',null,{timeout:60000});
+      check('第三境：结算，解锁"既济"图鉴',await p.evaluate(()=>__Q.save.codex.includes('jiji')&&__Q.save.stars.jiji>=1));
+      await p.screenshot({path:path.join(out,'j8-clear.png')});await p.click('#btn-next');
       await p.waitForFunction(()=>__Q.game.mode==='end',null,{timeout:60000});await p.waitForTimeout(400);
-      const end=await p.evaluate(()=>({mode:__Q.game.mode,cleared:__Q.game.cleared,gems:document.getElementById('end-gems').textContent,map:[...document.querySelectorAll('#end-map .node.done > b')].map(b=>b.textContent)}));
-      check('第二境：走进卦门，出现结局与八卦方位图（坎、离点亮）',end.mode==='end'&&end.map.join()==='坎,离',end);
+      const end=await p.evaluate(()=>({mode:__Q.game.mode,cleared:__Q.game.cleared,gems:document.getElementById('end-gems').textContent,map:[...document.querySelectorAll('#end-map .node.done > b')].map(b=>b.textContent),hub:document.querySelector('#end-map .hub').textContent}));
+      check('三境通关：出现结局与八卦方位图（坎、离点亮，中央显示既济）',end.mode==='end'&&end.map.join()==='坎,离'&&/既济/.test(end.hub),end);
       await p.screenshot({path:path.join(out,'10-end.png')});
       // 考据弹窗
       await p.evaluate(()=>{document.getElementById('end').hidden=true;});await p.click('#btn-lore');await p.waitForTimeout(300);await p.screenshot({path:path.join(out,'11-lore.png')});
-      const lore=await p.evaluate(()=>document.getElementById('lore-quotes').innerText);check('考据弹窗：引文均注明出处',/说卦传/.test(lore)&&/象传/.test(lore)&&/八卦取象歌/.test(lore),lore.split('\n').slice(0,4));
+      const lore=await p.evaluate(()=>document.getElementById('lore-quotes').innerText);check('考据弹窗（第三境）：卦辞、《彖传》、《象传》均注明出处',/卦辞/.test(lore)&&/彖传/.test(lore)&&/象传/.test(lore),lore.split('\n').slice(0,4));
       // 图鉴
       await p.evaluate(()=>{document.getElementById('lore').close();__Q.openCodex();});await p.waitForTimeout(300);await p.screenshot({path:path.join(out,'11b-codex.png')});
       await p.click('[data-card="wuyin"]');await p.waitForTimeout(300);await p.screenshot({path:path.join(out,'11c-codex-wuyin.png')});

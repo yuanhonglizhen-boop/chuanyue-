@@ -25,6 +25,15 @@ const THEMES={
   li:{mode:'zhi',tonic:196,bpm:92,swing:.05,
     melody:[[0,1,2],[1,1,2],[2,1,4],[3,1,2],[4,1,2],[3,1,4], [2,1,2],[1,1,2],[0,1,4],[1,1,4],[2,1,4], [4,1,4],[0,2,2],[4,1,2],[3,1,4],[2,1,4], [3,1,2],[2,1,2],[1,1,2],[2,1,2],[0,1,8]],
     roots:[0,2,3,0],drums:'wood'},
+  // 既济：水火交替——一段羽调（水，主音 A），一段徵调（火，主音 G）
+  jiji:{bpm:84,swing:.06,drums:'soft',sections:[
+    {mode:'yu',tonic:220,roots:[0,3,1,0],melody:[[0,1,4],[2,1,2],[3,1,2],[4,1,4],[3,1,4], [2,1,2],[1,1,2],[0,1,4],[1,1,8], [3,1,2],[4,1,2],[0,2,4],[4,1,2],[3,1,2],[2,1,4], [1,1,2],[2,1,2],[0,1,12]]},
+    {mode:'zhi',tonic:196,roots:[0,2,3,0],melody:[[2,1,2],[3,1,2],[4,1,4],[3,1,2],[2,1,2],[1,1,4], [0,1,2],[1,1,2],[2,1,4],[0,1,8], [4,1,4],[0,2,2],[1,2,2],[0,2,4],[4,1,4], [3,1,2],[2,1,2],[1,1,2],[2,1,2],[0,1,8]]},
+  ]},
+  // 终乱：商调，快、带鼓，紧张
+  luan:{mode:'shang',tonic:293.66,bpm:124,swing:0,drums:'wood',
+    melody:[[0,1,2],[0,1,2],[2,1,2],[1,1,2],[0,1,2],[4,0,2],[0,1,4], [2,1,2],[2,1,2],[4,1,2],[3,1,2],[2,1,4],[1,1,4], [0,1,2],[2,1,2],[4,1,2],[0,2,2],[4,1,2],[2,1,2],[3,1,4], [2,1,2],[1,1,2],[0,1,2],[4,0,2],[0,1,8]],
+    roots:[0,3,0,4]},
   // 结局：宫调慢一些
   end:{mode:'gong',tonic:261.63,bpm:66,swing:0,
     melody:[[4,0,4],[3,0,4],[2,0,4],[3,0,4], [1,0,4],[2,0,4],[0,0,8], [2,0,4],[3,0,4],[4,0,4],[0,1,4], [4,0,4],[3,0,2],[2,0,2],[0,0,8]],
@@ -70,15 +79,19 @@ export function createAudio(){
   function bell(out,f,t,vol=.08){for(const [m,v] of [[1,1],[2.76,.4],[5.4,.2]]){const o=ctx.createOscillator(),g=ctx.createGain();o.frequency.value=f*m;o.connect(g).connect(out);if(reverb)g.connect(reverb);env(g,t,.003,vol*v,.5/m+.15);o.start(t);o.stop(t+2.5);}}
 
   // ---------- 音乐调度 ----------
-  let theme=null,themeName=null,pending=null,timer=null,nextTime=0,step=0,layer=1;
+  let theme=null,themeName=null,pending=null,timer=null,nextTime=0,step=0,played=0,layer=1;
   function playTheme(name){
     if(!ctx){pending=name;return;}if(themeName===name)return;
     stopMusic();themeName=name;theme=THEMES[name];if(!theme)return;
     // 把曲谱展开成逐八分音符的事件表
-    theme._events=[];let pos=0;for(const [d,o,len] of theme.melody){theme._events.push({pos,d,o,len});pos+=len;}theme._length=Math.ceil(pos/16)*16;
+    secIndex=0;useSection();
     step=0;nextTime=ctx.currentTime+.15;musicGain.gain.cancelScheduledValues(ctx.currentTime);musicGain.gain.setValueAtTime(0,ctx.currentTime);musicGain.gain.linearRampToValueAtTime(musicMuted?0:.42,ctx.currentTime+1.2);
     timer=setInterval(schedule,40);
   }
+  // 多段主题：每段有自己的调式、主音、根音和旋律，一轮播完换下一段
+  let secIndex=0;
+  function useSection(){if(theme.sections){Object.assign(theme,theme.sections[secIndex%theme.sections.length]);}
+    theme._events=[];let pos=0;for(const [d,o,len] of theme.melody){theme._events.push({pos,d,o,len});pos+=len;}theme._length=Math.ceil(pos/16)*16;}
   function stopMusic(){if(timer){clearInterval(timer);timer=null;}themeName=null;}
   function setLayer(n){layer=n;}// 1：垫音+拨弦；2：+笛子旋律；3：+打击
   function schedule(){
@@ -92,7 +105,7 @@ export function createAudio(){
       if(inBar%2===0||layer>=2)pluck(musicGain,freqOf(theme,root+arp[0],arp[1]),t,inBar%2?.07:.11,1.2);
       if(layer>=2){const ev=theme._events.find(e=>e.pos===s);if(ev&&ev.d!==null)flute(musicGain,freqOf(theme,ev.d,ev.o),t,ev.len*spb*.92,.085);}
       if(layer>=3&&theme.drums){if(inBar%8===0)drum(musicGain,t,.16);if(theme.drums==='wood'&&inBar%4===2)wood(musicGain,t,.07);if(theme.drums==='soft'&&inBar%8===4)wood(musicGain,t,.05,.8);}
-      nextTime+=spb;step++;
+      nextTime+=spb;step++;played++;if(theme.sections&&step>=theme._length){step=0;secIndex++;useSection();}
     }
   }
   // 播放短乐句时，背景音乐暂时压低
@@ -126,6 +139,6 @@ export function createAudio(){
     fall(){jingle([[2,0],[1,0],[0,0,2]],{spb:.09,vol:.08,tonic:392});},
     splash(){noise(.35,{vol:.2,freq:1400});},
     ui(){tone(700,760,.06,{vol:.04});},
-    _debug:()=>({ctx:!!ctx,themeName,layer,step}),
+    _debug:()=>({ctx:!!ctx,themeName,layer,step:played,section:secIndex}),
   };
 }

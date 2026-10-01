@@ -48,8 +48,9 @@ export function createMascot({envMap,kind='yao'}){
   const barMat=new THREE.MeshBasicMaterial({color:C.trigram.color,transparent:true,opacity:C.trigram.opacity,depthWrite:false});
   const trigramGroup=new THREE.Group();{const dy=-.13,z=Math.sqrt(R*R-dy*dy)+.004;trigramGroup.position.set(0,R+dy,z);trigramGroup.rotation.x=-Math.asin(dy/R);}deco.add(trigramGroup);
   const barGeo=new THREE.BoxGeometry(1,1,1);
-  function setTrigram(lines){trigramGroup.clear();lines.forEach((yang,i)=>{const y=(i-1)*.052;const parts=yang?[[0,.17]]:[[-.054,.062],[.054,.062]];
-    for(const [x,w] of parts){const m=new THREE.Mesh(barGeo,barMat);m.scale.set(w,.024,.02);m.position.set(x,y,0);m.renderOrder=4;trigramGroup.add(m);}});}
+  // 三画卦或六画卦（六画时行距、粗细缩小）
+  function setTrigram(lines){trigramGroup.clear();const n=lines.length,gap=n>3?.034:.052,th=n>3?.017:.024;lines.forEach((yang,i)=>{const y=(i-(n-1)/2)*gap;const parts=yang?[[0,.17]]:[[-.054,.062],[.054,.062]];
+    for(const [x,w] of parts){const m=new THREE.Mesh(barGeo,barMat);m.scale.set(w,th,.02);m.position.set(x,y,0);m.renderOrder=4;trigramGroup.add(m);}});}
 
   // 脸
   const face=new THREE.Group();face.position.set(0,R*1.02,0);deco.add(face);

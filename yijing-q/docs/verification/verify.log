@@ -3,8 +3,12 @@ PASS server: 无失败请求  []
 PASS server: 无运行时错误  []
 PASS dist: 页面加载完成
 PASS dist: 无失败请求  []
-PASS 走路 1.2 秒：移动并自动蹦跳  {"hops":5,"minScaleY":0.913,"maxScaleY":1.095,"moved":5.88}
-PASS 果冻形变：落地压扁 <0.92、腾空拉长 >1.05  {"hops":5,"minScaleY":0.913,"maxScaleY":1.095,"moved":5.88}
+PASS 四个角色都能选择并显示  {"nuo":{"kind":"nuo","z":-0.754},"lin":{"kind":"lin","z":-0.754},"koi":{"kind":"koi","z":-0.754},"yao":{"kind":"yao","z":-0.754}}
+PASS 四个角色能力完全一致（同样输入位移相同）  {"nuo":{"kind":"nuo","z":-0.754},"lin":{"kind":"lin","z":-0.754},"koi":{"kind":"koi","z":-0.754},"yao":{"kind":"yao","z":-0.754}}
+PASS 选中的角色记入存档
+PASS 音乐：第一境播放坎（羽调）主题，并在推进  {"ctx":true,"themeName":"kan","layer":2,"step":81,"section":0}
+PASS 走路 1.2 秒：移动并自动蹦跳  {"hops":5,"minScaleY":0.915,"maxScaleY":1.147,"moved":5.88}
+PASS 果冻形变：落地压扁 <0.92、腾空拉长 >1.05  {"hops":5,"minScaleY":0.915,"maxScaleY":1.147,"moved":5.88}
 PASS 跳跃与二段跳（二段跳更高）  {"single":1.37,"double":2.28}
 PASS 掉进水里会回到最近站稳处  {"falls":1,"pos":[0,0,3.5]}
 PASS 第一境·前半: 全部 15 个航点到达（无瞬移、无落水）
@@ -14,18 +18,37 @@ PASS 第一境：三座爻台排成坎卦 [阴,阳,阴]，石桥升起  {"altars
 PASS 第一境·云垫与高台: 全部 6 个航点到达（无瞬移、无落水）
 PASS 第一境：拿到 3 枚以上爻玉，卦门亮起  {"gems":["bob","east","perch"],"gate":true}
 PASS 第一境·石桥: 全部 6 个航点到达（无瞬移、无落水）
-PASS 第一境：走进卦门，进入第二境  {"cleared":[true,false]}
+PASS 第一境：走进卦门，出现结算（通关星亮、星数记入存档）  {"stars":[true,false,true],"saved":2,"codex":["c-yao","c-nuo","c-lin","c-koi","yaowei","wuyin","kan"]}
+PASS 图鉴：第一境解锁 爻位 / 坎 / 五音  ["c-yao","c-nuo","c-lin","c-koi","yaowei","wuyin","kan"]
+PASS 第一境：点「继续」进入第二境  {"cleared":[true,false,false]}
+PASS 音乐：第二境切换为离（徵调）主题
 PASS 第二境·点燃初: 全部 7 个航点到达（无瞬移、无落水）
 PASS 第二境·点燃三: 全部 13 个航点到达（无瞬移、无落水）
 PASS 第二境·下山到二: 全部 8 个航点到达（无瞬移、无落水）
 PASS 第二境：按 E 盖灭「二」，三座火台排成离卦 [阳,阴,阳]  {"braziers":[1,0,1],"solved":true,"gems":["p1","p2","slider","p3"],"gate":true}
 PASS 第二境：拿到 3 枚以上爻玉，卦门亮起  {"braziers":[1,0,1],"solved":true,"gems":["p1","p2","slider","p3"],"gate":true}
 PASS 第二境·去卦门: 全部 12 个航点到达（无瞬移、无落水）
-PASS 第二境：走进卦门，出现结局与八卦方位图（坎、离点亮）  {"mode":"end","cleared":[true,true],"gems":"7 / 12","map":["坎","离"]}
-PASS 考据弹窗：引文均注明出处  ["离为火。","《周易·说卦传》","离也者，明也，万物皆相见，南方之卦也。","《周易·说卦传》"]
+PASS 第三境：进入，音乐切换为既济主题（羽调 / 徵调交替）
+PASS 第三境·阳①：水态穿过火墙，拿起阳爻块: 全部 7 个航点到达（无瞬移、无落水）
+PASS 第三境：阳爻块放进「二」位被拒绝，提示"不当位"，并解锁"当位"图鉴  {"slot":null,"held":true,"toast":"此爻不当位：「二」是阴位，要放阴爻（断成两段）。","codex":true}
+PASS 第三境·阳① → 鼎山「初」位: 全部 10 个航点到达（无瞬移、无落水）
+PASS 第三境·阳②（瀑布上的水域）→「三」: 全部 23 个航点到达（无瞬移、无落水）
+PASS 第三境·阳③（蒸汽口 → 北方高岛）→「五」: 全部 26 个航点到达（无瞬移、无落水）
+PASS 第三境·阴①（西岛冰封）→「二」: 全部 29 个航点到达（无瞬移、无落水）
+PASS 第三境·阴②（东南岛火灵）→「四」: 全部 34 个航点到达（无瞬移、无落水）
+PASS 第三境·阴③（上层石龛）→「上」: 全部 38 个航点到达（无瞬移、无落水）
+PASS 第三境：六爻当位，排成既济 [阳,阴,阳,阴,阳,阴]，进入"终乱"  {"placed":[1,0,1,0,1,0],"phase":"luan"}
+PASS 第三境·终乱（限时化解三处）: 全部 12 个航点到达（无瞬移、无落水）
+PASS 第三境："思患而豫防之"——三处乱子在限时内化解，卦门亮起  {"phase":"done","gems":["east","southeast","upper","shrine","secret"],"gate":true,"left":74}
+PASS 第三境·走进鼎山中央的卦门: 全部 9 个航点到达（无瞬移、无落水）
+PASS 第三境：结算，解锁"既济"图鉴
+PASS 三境通关：出现结局与八卦方位图（坎、离点亮，中央显示既济）  {"mode":"end","cleared":[true,true,true],"gems":"12 / 18","map":["坎","离"],"hub":"既济 · 水在火上后天八卦方位北在上"}
+PASS 考据弹窗（第三境）：卦辞、《彖传》、《象传》均注明出处  ["既济：亨小，利贞。初吉终乱。","《周易》卦辞","既济，亨，小者亨也。利贞，刚柔正而位当也。初吉，柔得中也。终止则乱，其道穷也。","《周易·彖传》"]
+PASS 图鉴卡：五音卡引《礼记·月令》  ["← 返回","五音","gōng shāng jué zhǐ yǔ"]
+PASS 挑战模式：计时显示、落水回本境起点、超时重开  {"timer":true,"back":[0,3.5],"reset":true}
 PASS dist: 全程无运行时错误  []
 PASS 390px 手机：无横向溢出
 PASS 手机：显示摇杆与跳跃键，顶栏不折行  {"joystick":true,"jump":true,"titleOneLine":true,"gemsOneLine":true}
 PASS 手机：摇杆向上推，团子向前走  {"before":3.5,"after":-1.16}
 PASS 手机：无运行时错误  []
-ALL PASSED (30)
+ALL PASSED (53)

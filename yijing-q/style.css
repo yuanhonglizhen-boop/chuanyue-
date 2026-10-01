@@ -111,3 +111,11 @@ dialog.wide{max-width:min(720px,calc(100% - 24px));width:100%}
 .back{border:0;background:none;font-size:14px;opacity:.7;padding:0;margin-bottom:8px}
 .detail-head{display:flex;gap:18px;align-items:center;margin-bottom:10px}.detail-head h3{margin:0;font-size:26px}.detail-head small{opacity:.65}
 #codex-detail .one{font-size:16px;line-height:1.8}#codex-detail .key{font-weight:600;color:var(--jade)}
+/* 第三境：水火变身 */
+#form{display:flex;align-items:center;gap:7px;border:0;background:var(--glass);backdrop-filter:blur(8px);padding:8px 12px;border-radius:18px;box-shadow:var(--shadow);font-size:14px}
+#form i{width:16px;height:16px;border-radius:50%;background:#e9e4d4;box-shadow:inset -2px -2px 4px rgba(0,0,0,.12)}#form[data-form="water"] i{background:#86cfff}#form[data-form="fire"] i{background:#ffa45c}
+#form kbd{font-size:10px;min-width:16px}
+#btn-form{display:none}
+@media (pointer:coarse){body.forms #btn-form{display:block;position:fixed;z-index:6;right:40px;bottom:222px;width:56px;height:56px;border:0;border-radius:50%;background:#ffd9a8;box-shadow:var(--shadow);font-weight:700;font-size:17px;touch-action:none}#form kbd{display:none}}
+body[data-level="jiji"]{background:#ffe1c6}
+@media (max-width:560px){#form b{display:none}}
