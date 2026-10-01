@@ -63,6 +63,7 @@ export function buildRoom1(ctx){
   // 门钥
   const key=new T.Group();key.position.set(0,2.25,1.05);cab.add(key);key.visible=false;/* 悬在柜前上方：不会被柜沿和拉出的抽屉挡住 */
   W.mesh(new T.TorusGeometry(.08,.02,8,20),W.M.gold,-.12,0,0,key);W.mesh(new T.BoxGeometry(.26,.03,.03),W.M.gold,.05,0,0,key);W.mesh(new T.BoxGeometry(.03,.07,.03),W.M.gold,.15,-.04,0,key);
+  W.mesh(new T.SphereGeometry(.3,12,8),new T.MeshBasicMaterial({visible:false}),0,0,0,key);/* 看不见的点击范围：钥匙本身太细，不好点中 */
   const keyLight=new T.PointLight('#ffd27a',0,2.2,2);keyLight.position.set(0,.2,0);key.add(keyLight);
   function showKey(){key.visible=true;keyLight.intensity=1.6;}
   W.interact(key,{label:'拿起金钥匙',range:2.6,enabled:()=>key.visible,onClick:()=>{key.visible=false;keyLight.intensity=0;ctx.inv.add('key1');sfx.pickup();ctx.setFlag('key1');ctx.toast('得到：门钥。');}});
