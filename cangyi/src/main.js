@@ -157,7 +157,7 @@ document.querySelectorAll('dialog').forEach(d=>{d.querySelectorAll('[data-close]
 function showTitle(){game.mode='title';$('title').hidden=false;$('hud').hidden=true;$('crosshair').hidden=true;$('compass').hidden=true;turtle.root.visible=true;
   $('btn-continue').hidden=!save.started;$('btn-begin').textContent=save.started?'重新开始':'开始';sfx.play('hall');}
 function startGame(fresh){sfx.unlock();
-  if(fresh&&save.started){try{localStorage.removeItem(SAVE_KEY);}catch{}const keep={palette:save.palette,view:save.view,fov:save.fov,sens:save.sens,music:save.music,sfx:save.sfx};save={...structuredClone(DEFAULTS),...keep};location.reload();return;}
+  if(fresh&&save.started){try{localStorage.removeItem(SAVE_KEY);}catch{}const keep={palette:save.palette,view:save.view,fov:save.fov,sens:save.sens,music:save.music,sfx:save.sfx,style:save.style};save={...structuredClone(DEFAULTS),...keep};location.reload();return;}
   save.started=true;persist();game.mode='play';$('title').hidden=true;$('hud').hidden=false;
   const p=save.pos||rooms[0].spawn;P.x=p.x;P.z=p.z;P.yaw=p.yaw||0;cam.yaw=cam.tYaw=P.yaw;setView(view);renderInv();
   if(!save.pos)toast('拖动画面看四周，点击物品互动；WASD 走动。V 切换视角，H 问书灵。',6000);}
@@ -165,7 +165,7 @@ $('btn-begin').onclick=()=>startGame(true);$('btn-continue').onclick=()=>startGa
 $('swatches').innerHTML=Object.entries(PALETTES).map(([k,p])=>'<button data-pal="'+k+'" style="--c:'+p.shell+';--c2:'+p.plate+'" aria-pressed="'+(k===save.palette)+'"><i></i>'+p.name+'</button>').join('');
 $('swatches').querySelectorAll('[data-pal]').forEach(b=>b.onclick=()=>{save.palette=b.dataset.pal;persist();turtle.setPalette(save.palette);turtle.celebrate();sfx.unlock();sfx.click();$('swatches').querySelectorAll('[data-pal]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));});
 document.querySelectorAll('[data-view]').forEach(b=>{b.setAttribute('aria-pressed',String(b.dataset.view===view));b.onclick=()=>{view=b.dataset.view;save.view=view;persist();document.querySelectorAll('[data-view]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));};});
-function showEnding(){game.ended=true;sfx.solve();const secs=Math.round(save.time);
+function showEnding(){game.ended=true;save.flags.ended=true;persist();sfx.solve();const secs=Math.round(save.time);
   $('end-time').textContent=Math.floor(secs/60)+' 分 '+(secs%60)+' 秒';$('end-hints').textContent=save.hintsUsed;$('end-notes').innerHTML=save.notes.map(id=>'<li>'+NOTES[id].title+'<small>'+NOTES[id].src+'</small></li>').join('');$('ending').showModal();}
 
 // ---------- 主循环 ----------
@@ -194,7 +194,7 @@ function step(dt){
     if(game.pending){const {it,point}=game.pending;if(distTo(point)<=(it.range||2.4)){game.pending=null;game.walkTo=null;if(!it.enabled||it.enabled())it.onClick();}else if(!game.walkTo)game.pending=null;}
     if(Math.round(game.time*2)!==Math.round((game.time-dt)*2)){save.pos={x:P.x,z:P.z,yaw:P.yaw};persist();}
     sfx.play(currentRoom().theme);
-    if(!game.ended&&flags.lamps&&P.z<rooms[2].endZ)showEnding();
+    if(!game.ended&&!flags.ended&&flags.lamps&&P.z<rooms[2].endZ)showEnding();
   }
   W.update(dt,game.time);turtle.update(dt,{speed:game.mode==='play'?P.speed:0});
   mk.material.opacity=Math.max(0,mk.material.opacity-dt*1.5);mk.scale.multiplyScalar(1+dt*.6);
