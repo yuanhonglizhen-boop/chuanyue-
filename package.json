@@ -1,0 +1,24 @@
+{
+  "name": "yijing-rain-garden",
+  "version": "0.7.0",
+  "private": true,
+  "type": "module",
+  "description": "易境 · 雨后通途 —— Three.js 山水机关游戏",
+  "scripts": {
+    "start": "node server.cjs",
+    "build": "node build.cjs",
+    "vendor:three": "node tools/vendor-three.cjs",
+    "verify:cloud": "node tools/verify-cloud.cjs",
+    "test:gait": "node qa-gait.cjs",
+    "test:gait-visual": "node qa-gait-visual.cjs",
+    "test:controls": "node qa-v7.cjs --controls",
+    "test:inputs": "node qa-v7.cjs --inputs",
+    "test:adventure": "node qa-v7.cjs",
+    "test": "npm run build && npm run test:gait && npm run test:controls && npm run test:inputs && npm run test:adventure && npm run test:gait-visual"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "playwright": "1.56.1",
+    "three": "0.179.1"
+  }
+}

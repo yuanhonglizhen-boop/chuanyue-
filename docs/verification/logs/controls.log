@@ -1,0 +1,93 @@
+PASS traveller scale reduced from 1.12 to 0.78
+PASS spawn is clear of real solid geometry
+PASS component collision footprints survived visual mesh merging
+PASS KeyW moves camera-relative without clipping
+PASS KeyA moves camera-relative without clipping
+PASS KeyS moves camera-relative without clipping
+PASS KeyD moves camera-relative without clipping
+PASS diagonal speed is normalized
+{
+  "checks": [
+    "traveller scale reduced from 1.12 to 0.78",
+    "spawn is clear of real solid geometry",
+    "component collision footprints survived visual mesh merging",
+    "KeyW moves camera-relative without clipping",
+    "KeyA moves camera-relative without clipping",
+    "KeyS moves camera-relative without clipping",
+    "KeyD moves camera-relative without clipping",
+    "diagonal speed is normalized"
+  ],
+  "metrics": {
+    "initial": {
+      "scale": 0.78,
+      "valid": true,
+      "blocks": 860,
+      "floors": 156
+    },
+    "keyboard": {
+      "KeyW": {
+        "delta": [
+          -0.26552302593635274,
+          -0.5100220805980804
+        ],
+        "distance": 0.574999999999993,
+        "forward": [
+          -0.46177917554148284,
+          -0.8869949227792844
+        ],
+        "valid": true
+      },
+      "KeyA": {
+        "delta": [
+          -0.5100220805980885,
+          0.26552302593636057
+        ],
+        "distance": 0.5750000000000037,
+        "forward": [
+          -0.46177917554148284,
+          -0.8869949227792844
+        ],
+        "valid": true
+      },
+      "KeyS": {
+        "delta": [
+          0.26552302593635274,
+          0.5100220805980804
+        ],
+        "distance": 0.574999999999993,
+        "forward": [
+          -0.46177917554148284,
+          -0.8869949227792844
+        ],
+        "valid": true
+      },
+      "KeyD": {
+        "delta": [
+          0.5100220805980885,
+          -0.26552302593636057
+        ],
+        "distance": 0.5750000000000037,
+        "forward": [
+          -0.46177917554148284,
+          -0.8869949227792844
+        ],
+        "valid": true
+      }
+    }
+  },
+  "errors": []
+}
+AssertionError [ERR_ASSERTION]: actual WASD input moves and stops immediately on keyup
+    at check (/home/user/chuanyue-/qa-controls-v5.cjs:8:32)
+    at /home/user/chuanyue-/qa-controls-v5.cjs:16:356 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+real	1m26.661s
+user	0m1.103s
+sys	0m0.180s

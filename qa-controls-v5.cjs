@@ -1,7 +1,7 @@
-const {chromium}=require('C:/Users/宋/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const {chromium,dist}=require('./tools/browser.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),{pathToFileURL}=require('node:url');
-const out='E:/video-outputs/yijing-rain-garden/controls-v5';
-(async()=>{const browser=await chromium.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true,args:['--disable-dev-shm-usage']});
+const out=dist;
+(async()=>{const browser=await chromium.launch({headless:true,args:['--disable-dev-shm-usage']});
 const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[],checks=[],metrics={};page.on('pageerror',e=>errors.push(String(e)));await page.route(/^https?:/,r=>r.abort());
 try{
   await page.goto(pathToFileURL(out+'/易境-雨后通途.html').href);await page.waitForFunction(()=>window.__READY);await page.waitForTimeout(900);

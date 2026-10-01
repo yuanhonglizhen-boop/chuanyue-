@@ -1,0 +1,15 @@
+NOT RUN: source-adventure-v6 baseline missing at /home/user/source-adventure-v6
+{
+  "source-gait-v7": {
+    "cases": 18,
+    "maxBoneError": 1.3877787807814457e-16,
+    "crossingFrames": 0,
+    "maxFootJump": 0.18140283726841183,
+    "maxLiftOnFlat": 0.033904929104160146,
+    "groundSlideStraight": [
+      3.1086244689504383e-15,
+      2.6645352591003757e-15,
+      2.6645352591003757e-15
+    ]
+  }
+}

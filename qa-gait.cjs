@@ -1,7 +1,10 @@
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),{pathToFileURL}=require('node:url');
-const out='E:/video-outputs/yijing-rain-garden/gait-v7';
+const out=path.join(__dirname,'dist');
+// Current character.js is always tested. The v6 baseline (../source-adventure-v6) is a historical copy that is
+// not part of this repo; when it is absent its comparison is reported as NOT RUN rather than passed.
+const sources=[['source-adventure-v6',path.join(__dirname,'..','source-adventure-v6')],['source-gait-v7',__dirname]],notRun=[];
 (async()=>{const THREE=await import(pathToFileURL(path.join(__dirname,'vendor/three.module.js')).href);const results={};
-for(const version of ['source-adventure-v6','source-gait-v7']){const {createScholar}=await import(pathToFileURL(path.join(__dirname,'..',version,'character.js')).href);const cases=[];
+for(const [version,dir] of sources){if(!fs.existsSync(path.join(dir,'character.js'))){notRun.push(version);console.log('NOT RUN: '+version+' baseline missing at '+dir);continue;}const {createScholar}=await import(pathToFileURL(path.join(dir,'character.js')).href);const cases=[];
 for(const fps of [60,30,20])for(const name of ['straight','turn90','reverse','stopStart','stairs','pivot']){
 const rig=createScholar({scene:new THREE.Scene(),mat:(n,c)=>new THREE.MeshBasicMaterial({color:c})}),p=rig.person,dt=1/fps,collision={heightAt:(x,z)=>name==='stairs'?.055*Math.max(0,Math.floor(-z/.45)):0};p.position.set(0,0,0);rig.update({dt,t:0,distance:0,moving:false,collision});let last=rig.debug,turn=0,maxBoneError=0,maxFootJump=0,maxLateral=0,crossings=0,plantedPairs=0,maxPlantSlip=0,maxGroundSlide=0,maxLift=0,minSole=10,maxKneeJump=0;
 for(let n=1;n<=fps*5;n++){const t=n/fps,moving=name==='pivot'?false:name==='stopStart'?t<4&&t%1<.65:t<4;
@@ -19,5 +22,5 @@ if(version==='source-gait-v7'){assert(maxBoneError<1e-8,JSON.stringify(result));
 }
 results[version]=cases;
 }
-fs.writeFileSync(out+'/qa-gait-report.json',JSON.stringify({passed:true,scope:'Same motion inputs, 18 cases per version; 20/30/60 fps, five seconds each',results},null,2));console.log(JSON.stringify(Object.fromEntries(Object.entries(results).map(([v,rs])=>[v,{cases:rs.length,maxBoneError:Math.max(...rs.map(r=>r.maxBoneError)),crossingFrames:rs.reduce((s,r)=>s+r.crossings,0),maxFootJump:Math.max(...rs.map(r=>r.maxFootJump)),maxLiftOnFlat:Math.max(...rs.filter(r=>r.name!=='stairs').map(r=>r.maxLift)),groundSlideStraight:rs.filter(r=>r.name==='straight').map(r=>r.maxGroundSlide)}])),null,2));
+fs.mkdirSync(out,{recursive:true});fs.writeFileSync(out+'/qa-gait-report.json',JSON.stringify({passed:true,notRun,scope:'Same motion inputs, 18 cases per version; 20/30/60 fps, five seconds each',results},null,2));console.log(JSON.stringify(Object.fromEntries(Object.entries(results).map(([v,rs])=>[v,{cases:rs.length,maxBoneError:Math.max(...rs.map(r=>r.maxBoneError)),crossingFrames:rs.reduce((s,r)=>s+r.crossings,0),maxFootJump:Math.max(...rs.map(r=>r.maxFootJump)),maxLiftOnFlat:Math.max(...rs.filter(r=>r.name!=='stairs').map(r=>r.maxLift)),groundSlideStraight:rs.filter(r=>r.name==='straight').map(r=>r.maxGroundSlide)}])),null,2));
 })().catch(e=>{console.error(e);process.exit(1);});

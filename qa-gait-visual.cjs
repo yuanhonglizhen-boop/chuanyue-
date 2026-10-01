@@ -1,7 +1,7 @@
-const {chromium}=require('C:/Users/宋/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const {chromium,dist}=require('./tools/browser.cjs');
 const fs=require('node:fs'),{pathToFileURL}=require('node:url');
-const out='E:/video-outputs/yijing-rain-garden/gait-v7';
-(async()=>{const browser=await chromium.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});const p=await browser.newPage({viewport:{width:1280,height:900}});const errors=[];p.on('pageerror',e=>errors.push(String(e)));await p.goto(pathToFileURL(out+'/易境-雨后通途.html').href);await p.waitForFunction(()=>window.__READY);await p.waitForTimeout(700);
+const out=dist;
+(async()=>{const browser=await chromium.launch({headless:true});const p=await browser.newPage({viewport:{width:1280,height:900}});const errors=[];p.on('pageerror',e=>errors.push(String(e)));await p.goto(pathToFileURL(out+'/易境-雨后通途.html').href);await p.waitForFunction(()=>window.__READY);await p.waitForTimeout(700);
 const data=await p.evaluate(async()=>{
 const g=__game,person=g.person,gallery=document.createElement('canvas');gallery.width=1600;gallery.height=1000;const ctx=gallery.getContext('2d');ctx.fillStyle='#e8ede1';ctx.fillRect(0,0,1600,1000);const flat={heightAt:()=>.33};
 g.travel.reset();person.position.set(0,.33,5.8);person.rotation.y=0;g.scholar.reset();g.scholar.update({dt:1/60,t:0,distance:0,moving:false,collision:flat});let turn=0;const shots=[];
