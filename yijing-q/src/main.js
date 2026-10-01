@@ -134,7 +134,15 @@ function showCard(id){const c=CODEX.find(c=>c.id===id);
     (c.quotes.length?'<ol class="quotes">'+c.quotes.map(q=>'<li><q>'+q.t+'</q><cite>'+q.s+'</cite></li>').join('')+'</ol>':'<p class="note">'+c.noQuote+'</p>')+
     '<p class="rule">在游戏里：'+c.game+'</p>';
   $('codex-grid').hidden=true;$('codex-detail').hidden=false;$('codex-back').onclick=openCodex;sfx.ui();}
-$('btn-codex').onclick=openCodex;$('btn-codex-title').onclick=openCodex;
+$('btn-codex').onclick=openCodex;
+// 选关：随时跳到任意一境
+const LEVEL_INFO=[{lines:[0,1,0],title:'第一境 · 习坎',sub:'坎 · 水'},{lines:[1,0,1],title:'第二境 · 继明',sub:'离 · 火'},{lines:[1,0,1,0,1,0],title:'第三境 · 既济',sub:'水在火上'}];
+function openLevels(){
+  $('level-list').innerHTML=LEVEL_INFO.map((L,i)=>{const id=LEVEL_IDS[i],st=save.stars[id]||0,best=save.best[id];
+    return '<button data-goto="'+i+'">'+glyph(L.lines)+'<span><b>'+L.title+'</b><small>'+L.sub+(best?' · 最佳 '+fmt(best):'')+'</small></span><em>'+'★'.repeat(st)+'☆'.repeat(3-st)+'</em></button>';}).join('');
+  $('level-list').querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>{$('levels').close();startGame(Number(b.dataset.goto));});
+  $('levels').showModal();sfx.ui();}
+$('btn-levels').onclick=openLevels;$('btn-codex-title').onclick=openCodex;
 $('btn-lore').onclick=()=>openLore(game.level.id);
 $('btn-about').onclick=()=>{$('about-body').innerHTML=ABOUT.body.map(p=>'<p>'+p+'</p>').join('');$('about').showModal();sfx.ui();};
 $('btn-help').onclick=()=>{$('help').showModal();sfx.ui();};
@@ -212,7 +220,7 @@ function step(dt){
   mascot.update(dt,{vel:new THREE.Vector3(p.vx,p.vy,p.vz),grounded:p.grounded,yaw:p.yaw});
 }
 // 标题页：镜头靠近角色，画面偏移，让角色站在标题框旁边
-function framing(){const L=game.level;ctrl.place(L.spawn.x,L.spawn.y,L.spawn.z,0);cam.targetYaw=cam.yaw=.25;cam.targetPitch=cam.pitch=.16;cam.targetDist=cam.dist=4.4;cam.focus.set(L.spawn.x,L.spawn.y+.75,L.spawn.z);}
+function framing(){const L=game.level;ctrl.place(L.spawn.x,L.spawn.y,L.spawn.z,0);const narrow=innerWidth<=760;cam.targetYaw=cam.yaw=.25;cam.targetPitch=cam.pitch=narrow?.22:.16;cam.targetDist=cam.dist=narrow?7.5:4.4;/* 手机竖屏：拉远一些，角色站在标题框上方 */cam.focus.set(L.spawn.x,L.spawn.y+.75,L.spawn.z);}
 function render(dt){
   const p=ctrl.p;
   mascot.root.position.set(p.x,p.y,p.z);mascot.root.rotation.y=game.mode==='title'?Math.sin(game.time*.6)*.35+.25:p.yaw;
@@ -221,7 +229,7 @@ function render(dt){
   if(keys.has('KeyQ'))cam.targetYaw+=dt*1.8;if(keys.has('KeyR'))cam.targetYaw-=dt*1.8;
   if(game.mode!=='title')cam.focus.lerp(new THREE.Vector3(p.x+p.vx*.25,p.y+1.1,p.z+p.vz*.25),1-Math.exp(-dt*5));
   camera.position.set(cam.focus.x+Math.sin(cam.yaw)*Math.cos(cam.pitch)*cam.dist,cam.focus.y+Math.sin(cam.pitch)*cam.dist,cam.focus.z+Math.cos(cam.yaw)*Math.cos(cam.pitch)*cam.dist);camera.lookAt(cam.focus);
-  if(game.mode==='title'){const r=stage.getBoundingClientRect(),wide=r.width>760;camera.setViewOffset(r.width,r.height,wide?-r.width*.2:0,wide?0:r.height*.24,r.width,r.height);}
+  if(game.mode==='title'){const r=stage.getBoundingClientRect(),wide=r.width>760;camera.setViewOffset(r.width,r.height,wide?-r.width*.2:0,wide?0:r.height*.3,r.width,r.height);}
   sun.position.set(p.x-12,p.y+22,p.z+8);sun.target.position.set(p.x,p.y,p.z);
   world.sky.position.copy(camera.position);
   renderer.render(scene,camera);
@@ -246,7 +254,7 @@ addEventListener('pointerdown',()=>sfx.unlock(),{once:true});addEventListener('k
 // 测试接口：确定性推进，不依赖帧率
 window.__Q={
   get game(){return game;},get level(){return game.level;},get player(){return ctrl.p;},get mascot(){return mascot;},get physics(){return physics;},camera,renderer,cam,save,sfx,
-  start:startGame,loadLevel,selectCharacter,openCodex,unlock,setChallenge,showTitle,setForm,cycleForm,nearestInteractable,
+  start:startGame,loadLevel,openLevels,selectCharacter,openCodex,unlock,setChallenge,showTitle,setForm,cycleForm,nearestInteractable,
   step(seconds,{keys:k=[],jump=false,move=null,draw=true}={}){k.forEach(c=>keys.add(c));testMove=move;let first=true;for(let t=0;t<seconds-1e-9;t+=FIXED){if(first&&jump)jumpPressed=true;first=false;step(FIXED);}testMove=null;k.forEach(c=>keys.delete(c));if(draw){render(1/60);updateHud(true);}},
   jump(){jumpPressed=true;},interact,
   teleport(x,y,z){ctrl.place(x,y,z);},

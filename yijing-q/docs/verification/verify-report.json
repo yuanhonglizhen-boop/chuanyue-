@@ -1,5 +1,5 @@
 {
-  "time": "2026-10-01T08:58:48.598Z",
+  "time": "2026-10-01T09:11:13.564Z",
   "checks": [
     {
       "name": "server: 页面加载完成",
@@ -79,8 +79,19 @@
         "ctx": true,
         "themeName": "kan",
         "layer": 2,
-        "step": 81,
-        "section": 0
+        "step": 82,
+        "section": 0,
+        "musicGain": 0.41999998688697815,
+        "musicMuted": false
+      }
+    },
+    {
+      "name": "音乐按钮：关闭后完全静音（峰值为 0），再点恢复",
+      "ok": true,
+      "detail": {
+        "on": 0.0892,
+        "off": 0,
+        "back": 0.0665
       }
     },
     {
@@ -414,6 +425,10 @@
         ],
         "reset": true
       }
+    },
+    {
+      "name": "选关：游戏中可直接跳到第三境",
+      "ok": true
     },
     {
       "name": "dist: 全程无运行时错误",

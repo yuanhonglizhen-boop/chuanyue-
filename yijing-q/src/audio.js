@@ -42,12 +42,12 @@ const THEMES={
 export {THEMES};
 
 export function createAudio(){
-  let ctx=null,master=null,sfxGain=null,musicGain=null,duck=null,sfxMuted=false,musicMuted=false,voice=1;
+  let meter=null,ctx=null,master=null,sfxGain=null,musicGain=null,duck=null,sfxMuted=false,musicMuted=false,voice=1;
   function unlock(){try{if(!ctx){ctx=new (window.AudioContext||window.webkitAudioContext)();master=ctx.createGain();master.gain.value=.8;
-      const comp=ctx.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=3;master.connect(comp).connect(ctx.destination);
+      const comp=ctx.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=3;master.connect(comp).connect(ctx.destination);meter=ctx.createAnalyser();meter.fftSize=2048;master.connect(meter);
       sfxGain=ctx.createGain();sfxGain.gain.value=sfxMuted?0:.6;sfxGain.connect(master);
       duck=ctx.createGain();duck.connect(master);musicGain=ctx.createGain();musicGain.gain.value=musicMuted?0:.42;musicGain.connect(duck);
-      reverb=makeReverb();reverb.connect(duck);}
+      reverb=makeReverb();reverb.connect(musicGain);}/* 混响只走音乐通道：关音乐时混响也一起关掉 */
     ctx.resume();if(pending){const t=pending;pending=null;playTheme(t);}}catch{}}
   // 简单混响：带衰减的噪声卷积，给古筝和笛子一点空间感
   let reverb=null;function makeReverb(){const len=ctx.sampleRate*1.6,b=ctx.createBuffer(2,len,ctx.sampleRate);for(let c=0;c<2;c++){const d=b.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.6);}const cv=ctx.createConvolver();cv.buffer=b;const g=ctx.createGain();g.gain.value=.28;cv.connect(g);const input=ctx.createGain();input.connect(cv);input._out=g;return Object.assign(input,{connect:(n)=>g.connect(n)});}
@@ -76,7 +76,7 @@ export function createAudio(){
   // 小鼓
   function drum(out,t,vol=.2){const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(48,t+.18);o.connect(g).connect(out);env(g,t,.003,vol,.09);o.start(t);o.stop(t+.5);}
   // 铃
-  function bell(out,f,t,vol=.08){for(const [m,v] of [[1,1],[2.76,.4],[5.4,.2]]){const o=ctx.createOscillator(),g=ctx.createGain();o.frequency.value=f*m;o.connect(g).connect(out);if(reverb)g.connect(reverb);env(g,t,.003,vol*v,.5/m+.15);o.start(t);o.stop(t+2.5);}}
+  function bell(out,f,t,vol=.08){for(const [m,v] of [[1,1],[2.76,.4],[5.4,.2]]){const o=ctx.createOscillator(),g=ctx.createGain();o.frequency.value=f*m;o.connect(g).connect(out);if(reverb&&out!==sfxGain)g.connect(reverb);env(g,t,.003,vol*v,.5/m+.15);o.start(t);o.stop(t+2.5);}}
 
   // ---------- 音乐调度 ----------
   let theme=null,themeName=null,pending=null,timer=null,nextTime=0,step=0,played=0,layer=1;
@@ -139,6 +139,7 @@ export function createAudio(){
     fall(){jingle([[2,0],[1,0],[0,0,2]],{spb:.09,vol:.08,tonic:392});},
     splash(){noise(.35,{vol:.2,freq:1400});},
     ui(){tone(700,760,.06,{vol:.04});},
-    _debug:()=>({ctx:!!ctx,themeName,layer,step:played,section:secIndex}),
+    _level(){if(!meter)return 0;const d=new Float32Array(meter.fftSize);meter.getFloatTimeDomainData(d);let m=0;for(const v of d)m=Math.max(m,Math.abs(v));return m;},/* 总输出的峰值，用于验证静音 */
+    _debug:()=>({ctx:!!ctx,themeName,layer,step:played,section:secIndex,musicGain:musicGain?musicGain.gain.value:null,musicMuted}),
   };
 }

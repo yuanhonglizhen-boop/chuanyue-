@@ -119,3 +119,13 @@ dialog.wide{max-width:min(720px,calc(100% - 24px));width:100%}
 @media (pointer:coarse){body.forms #btn-form{display:block;position:fixed;z-index:6;right:40px;bottom:222px;width:56px;height:56px;border:0;border-radius:50%;background:#ffd9a8;box-shadow:var(--shadow);font-weight:700;font-size:17px;touch-action:none}#form kbd{display:none}}
 body[data-level="jiji"]{background:#ffe1c6}
 @media (max-width:560px){#form b{display:none}}
+/* 选关 */
+.chapters-label{text-align:center;margin:14px 0 0}
+.level-list{display:grid;gap:8px}
+.level-list button{display:flex;align-items:center;gap:14px;border:0;background:#fff;border-radius:16px;padding:12px 16px;text-align:left;box-shadow:0 3px 10px rgba(36,65,60,.08)}
+.level-list button:hover{background:var(--jade-soft)}
+.level-list span{flex:1}.level-list b{display:block;font-size:16px}.level-list small{opacity:.65;font-size:12px}
+.level-list em{font-style:normal;color:#e0a43a;letter-spacing:1px}
+@media (max-width:560px){.hud-top nav button{width:32px;height:32px;font-size:14px}.hud-top nav{gap:3px}}
+#levels{width:min(440px,calc(100% - 24px))}.level-list b{white-space:nowrap}
+.level-list .glyph{width:34px;flex:none}

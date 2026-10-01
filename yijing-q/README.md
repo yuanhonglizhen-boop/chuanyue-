@@ -25,6 +25,7 @@ npm run verify     # 自动验证（需先 build）：不瞬移，真实走跳�
 | 互动（读碑、点火、拿 / 放爻块） | E | 「E」 |
 | 水火变身（第三境） | F | 「变」 |
 | 转镜头 / 远近 | 拖动、Q R / 滚轮 | 右侧拖动 |
+| 选关 | 右上角「关」，或标题页"直接选关" | 同左 |
 
 ## 内容
 
@@ -101,7 +102,7 @@ npm run verify     # 自动验证（需先 build）：不瞬移，真实走跳�
 
 ## 验证结果
 
-`npm run verify` 共 53 项检查，全部通过。报告见 `docs/verification/verify-report.json`，日志见 `verify.log`，截图在 `docs/verification/`。
+`npm run verify` 共 55 项检查，全部通过。报告见 `docs/verification/verify-report.json`，日志见 `verify.log`，截图在 `docs/verification/`。
 
 验证方式是：**不瞬移，按真实路线自动走、跳、变身、搬运，打通三境**。覆盖的内容有：
 - 四个角色的手感与能力一致性；

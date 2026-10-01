@@ -40,6 +40,11 @@ const {route:runRoute}=require('./route.cjs');const {runJiji}=require('./verify-
       await p.waitForTimeout(1200);
       const music=await p.evaluate(()=>__Q.sfx._debug());
       check('音乐：第一境播放坎（羽调）主题，并在推进',music.ctx&&music.themeName==='kan'&&music.step>4,music);
+      // 音乐开关：关 = 完全静音（测总输出峰值），开 = 恢复。先关音效，只听音乐
+      await p.click('#btn-sound');
+      const peak=async()=>{let m=0;for(let i=0;i<12;i++){await p.waitForTimeout(150);m=Math.max(m,await p.evaluate(()=>__Q.sfx._level()));}return +m.toFixed(4);};
+      const mOn=await peak();await p.click('#btn-music');await p.waitForTimeout(2500);const mOff=await peak();await p.click('#btn-music');await p.waitForTimeout(1500);const mBack=await peak();await p.click('#btn-sound');
+      check('音乐按钮：关闭后完全静音（峰值为 0），再点恢复',mOn>.01&&mOff===0&&mBack>.01,{on:mOn,off:mOff,back:mBack});
       // 弹跳形变：走路时自动小跳，身体在压扁与拉长之间变化
       const bounce=await p.evaluate(()=>{const Q=__Q,P=Q.player,sq=Q.mascot.root.children[0].children[0];let hops=0,wasG=true,minS=9,maxS=0;const x0=P.x,z0=P.z;
         for(let i=0;i<72;i++){Q.step(1/60,{move:{x:0,z:-1},draw:false});if(wasG&&!P.grounded)hops++;wasG=P.grounded;minS=Math.min(minS,sq.scale.y);maxS=Math.max(maxS,sq.scale.y);}
@@ -125,7 +130,11 @@ const {route:runRoute}=require('./route.cjs');const {runJiji}=require('./verify-
         Q.teleport(-1.2,.2,-8.4);Q.step(.4,{draw:false});Q.player.checkpoint={x:-1.2,y:.2,z:-8.4};Q.teleport(3,.5,-9.5);Q.step(1.6,{draw:false});const back=[+Q.player.x.toFixed(2),+Q.player.z.toFixed(2)];
         Q.game.levelTime=Q.game.timeLimit-.05;Q.step(.2,{draw:false});const reset=Q.game.levelTime<1;Q.setChallenge(false);return {timer,back,reset};});
       check('挑战模式：计时显示、落水回本境起点、超时重开',ch.timer&&Math.hypot(ch.back[0]-0,ch.back[1]-3.5)<.6&&ch.reset,ch);
-      // 近景：玉团子
+      // 选关：游戏中点「关」，直接进入第三境
+      await p.evaluate(()=>__Q.start(0));await p.click('#btn-levels');await p.waitForTimeout(300);await p.screenshot({path:path.join(out,'11d-levels.png')});
+      await p.click('[data-goto="2"]');await p.waitForTimeout(300);
+      check('选关：游戏中可直接跳到第三境',await p.evaluate(()=>__Q.game.levelIndex===2&&__Q.game.mode==='play'&&__Q.level.id==='jiji'));
+            // 近景：玉团子
       await p.evaluate(()=>{__Q.start(0);const c=__Q.cam;c.targetDist=c.dist=3.6;c.targetPitch=c.pitch=.22;c.targetYaw=c.yaw=.35;__Q.step(.5);});
       await p.screenshot({path:path.join(out,'12-yaoyao-closeup.png')});
       check('dist: 全程无运行时错误',errors.length===0,errors);
