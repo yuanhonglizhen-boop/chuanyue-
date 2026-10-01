@@ -52,7 +52,7 @@ function currentRoom(){for(const r of rooms){const b=r.bounds;if(P.z<=b.z1+.75&&
 
 // ---------- 输入 ----------
 const keys=new Set();
-addEventListener('keydown',e=>{if(e.target.closest?.('dialog,input'))return;keys.add(e.code);
+addEventListener('keydown',e=>{if(e.target.closest?.('dialog[open],input'))return;keys.add(e.code);
   if(game.mode!=='play')return;
   if(e.code==='KeyV')toggleView();if(e.code==='KeyE'&&!e.repeat)interactFront();if(e.code==='KeyN')openNotes();if(e.code==='KeyH')openHint();});
 addEventListener('keyup',e=>keys.delete(e.code));addEventListener('blur',()=>keys.clear());
@@ -137,7 +137,7 @@ function syncAudio(){$('btn-music').classList.toggle('off',sfx.musicMuted);$('bt
 $('btn-music').onclick=()=>{sfx.setMusicMuted(!sfx.musicMuted);save.music=!sfx.musicMuted;persist();syncAudio();};
 $('btn-sound').onclick=()=>{sfx.setMuted(!sfx.muted);save.sfx=!sfx.muted;persist();syncAudio();};
 $('btn-home').onclick=()=>showTitle();
-document.querySelectorAll('dialog').forEach(d=>d.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>d.close()));
+document.querySelectorAll('dialog').forEach(d=>{d.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>d.close());d.addEventListener('close',()=>document.activeElement?.blur?.());});/* 关掉对话框后交还键盘，快捷键立即可用 */
 
 // ---------- 标题 / 开始 / 结局 ----------
 function showTitle(){game.mode='title';$('title').hidden=false;$('hud').hidden=true;$('crosshair').hidden=true;$('compass').hidden=true;turtle.root.visible=true;
