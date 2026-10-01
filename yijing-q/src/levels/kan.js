@@ -80,13 +80,13 @@ export function buildKan(ctx){
   }
   return {
     id:'kan',index:0,lines:target,name:'坎',image:'水',title:'第一境 · 习坎',subtitle:'水洊至，习坎',
-    spawn:{x:0,y:0,z:3.5,yaw:0},killY:-1.4,camYaw:0,
+    spawn:{x:0,y:0,z:3.5,yaw:0},killY:-1.4,camYaw:0,timeLimit:300,
     gems,gate,altars,
     get solved(){return solved;},
     interactables:[{pos:steleA.pos,label:'读石碑',act:()=>ctx.openLore('kan')},{pos:steleB.pos,label:'读石碑',act:()=>ctx.openLore('kan')}],
     onLand(col){
       // 只在"从别处踏上来"的那一下切换，原地蹦跳不会反复切换
-      if(col.tag?.startsWith('altar:')&&last!==col){const a=altars.find(a=>a.col===col);const v=a.toggle();sfx.toggle(v);ctx.burst(new THREE.Vector3(col.x,col.top+.2,col.z),{color:v?'#ffe39a':'#bdeee0',n:16,speed:2.5});check();}
+      if(col.tag?.startsWith('altar:')&&last!==col){const a=altars.find(a=>a.col===col);const v=a.toggle();sfx.toggle(v);ctx.unlock('yaowei');ctx.burst(new THREE.Vector3(col.x,col.top+.2,col.z),{color:v?'#ffe39a':'#bdeee0',n:16,speed:2.5});check();}
       last=col;
     },
     objective(){

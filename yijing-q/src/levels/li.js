@@ -57,14 +57,14 @@ export function buildLi(ctx){
   world.roundTree(14.4,.6,-1.6,.8,'#e8b26e');world.pine(-13.2,2.2,-11.6,.9,'#7c9a6a');world.roundTree(-2.6,4.6,-25.8,.9,'#e3a46b');world.lantern(2.2,4.6,-21.2,'#ffb35c');
   world.pine(17.2,1.2,-17.6,.9,'#7c9a6a');world.lantern(13.4,1.2,-17.6,'#ffb35c');
 
-  const FLAME=28;let carry=0,solved=false,rise=0;
+  const FLAME=ctx.challenge?18:28;let carry=0,solved=false,rise=0;
   function setCarry(v){carry=v;ctx.mascot.setCarrying(v>0);}
   function check(){const now=braziers.map(b=>b.lit?1:0);if(!solved&&now.every((v,i)=>v===target[i])){solved=true;sfx.solve();toast('离卦已成 —— 上下阳、中间阴。去往卦门的石墩浮出水面！');bridgeStones.forEach(s=>s.col.disabled=false);}}
   const near=(p,b,r)=>Math.hypot(p.x-b.pos.x,p.z-b.pos.z)<r&&Math.abs(p.y-b.pos.y)<1.6;
 
   const level={
     id:'li',index:1,lines:target,name:'离',image:'火',title:'第二境 · 继明',subtitle:'明两作，离',
-    spawn:{x:0,y:0,z:4.2,yaw:0},killY:-1.4,camYaw:0,gems,gate,braziers,
+    spawn:{x:0,y:0,z:4.2,yaw:0},killY:-1.4,camYaw:0,timeLimit:360,gems,gate,braziers,
     get solved(){return solved;},get carry(){return carry;},_liftTop:()=>lift.col.top,_sliderX:()=>slider.col.x,
     interactables:[
       {pos:stele.pos,label:'读石碑',act:()=>ctx.openLore('li')},

@@ -1,5 +1,5 @@
 {
-  "time": "2026-10-01T07:41:04.879Z",
+  "time": "2026-10-01T08:25:02.290Z",
   "checks": [
     {
       "name": "server: 页面加载完成",
@@ -25,12 +25,70 @@
       "detail": []
     },
     {
+      "name": "四个角色都能选择并显示",
+      "ok": true,
+      "detail": {
+        "nuo": {
+          "kind": "nuo",
+          "z": -0.754
+        },
+        "lin": {
+          "kind": "lin",
+          "z": -0.754
+        },
+        "koi": {
+          "kind": "koi",
+          "z": -0.754
+        },
+        "yao": {
+          "kind": "yao",
+          "z": -0.754
+        }
+      }
+    },
+    {
+      "name": "四个角色能力完全一致（同样输入位移相同）",
+      "ok": true,
+      "detail": {
+        "nuo": {
+          "kind": "nuo",
+          "z": -0.754
+        },
+        "lin": {
+          "kind": "lin",
+          "z": -0.754
+        },
+        "koi": {
+          "kind": "koi",
+          "z": -0.754
+        },
+        "yao": {
+          "kind": "yao",
+          "z": -0.754
+        }
+      }
+    },
+    {
+      "name": "选中的角色记入存档",
+      "ok": true
+    },
+    {
+      "name": "音乐：第一境播放坎（羽调）主题，并在推进",
+      "ok": true,
+      "detail": {
+        "ctx": true,
+        "themeName": "kan",
+        "layer": 2,
+        "step": 13
+      }
+    },
+    {
       "name": "走路 1.2 秒：移动并自动蹦跳",
       "ok": true,
       "detail": {
         "hops": 5,
-        "minScaleY": 0.913,
-        "maxScaleY": 1.095,
+        "minScaleY": 0.915,
+        "maxScaleY": 1.147,
         "moved": 5.88
       }
     },
@@ -39,8 +97,8 @@
       "ok": true,
       "detail": {
         "hops": 5,
-        "minScaleY": 0.913,
-        "maxScaleY": 1.095,
+        "minScaleY": 0.915,
+        "maxScaleY": 1.147,
         "moved": 5.88
       }
     },
@@ -120,7 +178,41 @@
       "ok": true
     },
     {
-      "name": "第一境：走进卦门，进入第二境",
+      "name": "第一境：走进卦门，出现结算（通关星亮、星数记入存档）",
+      "ok": true,
+      "detail": {
+        "stars": [
+          true,
+          false,
+          true
+        ],
+        "saved": 2,
+        "codex": [
+          "c-yao",
+          "c-nuo",
+          "c-lin",
+          "c-koi",
+          "yaowei",
+          "wuyin",
+          "kan"
+        ]
+      }
+    },
+    {
+      "name": "图鉴：第一境解锁 爻位 / 坎 / 五音",
+      "ok": true,
+      "detail": [
+        "c-yao",
+        "c-nuo",
+        "c-lin",
+        "c-koi",
+        "yaowei",
+        "wuyin",
+        "kan"
+      ]
+    },
+    {
+      "name": "第一境：点「继续」进入第二境",
       "ok": true,
       "detail": {
         "cleared": [
@@ -128,6 +220,10 @@
           false
         ]
       }
+    },
+    {
+      "name": "音乐：第二境切换为离（徵调）主题",
+      "ok": true
     },
     {
       "name": "第二境·点燃初: 全部 7 个航点到达（无瞬移、无落水）",
@@ -208,6 +304,27 @@
         "离也者，明也，万物皆相见，南方之卦也。",
         "《周易·说卦传》"
       ]
+    },
+    {
+      "name": "图鉴卡：五音卡引《礼记·月令》",
+      "ok": true,
+      "detail": [
+        "← 返回",
+        "五音",
+        "gōng shāng jué zhǐ yǔ"
+      ]
+    },
+    {
+      "name": "挑战模式：计时显示、落水回本境起点、超时重开",
+      "ok": true,
+      "detail": {
+        "timer": true,
+        "back": [
+          0,
+          3.5
+        ],
+        "reset": true
+      }
     },
     {
       "name": "dist: 全程无运行时错误",

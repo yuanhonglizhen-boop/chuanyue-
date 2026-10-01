@@ -74,3 +74,40 @@ dialog h2{margin:0 0 12px;display:flex;gap:16px;align-items:center}dialog h2 sma
 @media (max-width:560px){#card h2{font-size:28px;letter-spacing:.1em;white-space:nowrap}#card p{font-size:15px;letter-spacing:.15em}.badge small{display:none}.badge #level-glyph{display:none}.badge{padding:8px 12px}.hud-top{gap:6px}.hud-top nav{gap:4px}.badge strong{font-size:14px}.gems{padding:8px 10px}.hud-top nav button{width:36px;height:36px}.title-box,.end-box{padding:22px 18px}}
 
 .keys-touch{display:none}@media (pointer:coarse){.keys{display:none}.keys-touch{display:block}}
+
+/* ---------- v0.2：角色选择、模式、图鉴、结算 ---------- */
+body.titling .hud-top,body.titling .objective,body.titling .touch,body.titling #prompt{display:none}
+@media (min-width:761px){#title{place-items:center start;padding-left:5vw}.title-box{max-width:470px}}
+@media (max-width:760px){#title{place-items:end center;background:linear-gradient(transparent 30%,rgba(223,241,234,.75) 60%)}.title-box{max-height:64vh;overflow:auto}}
+.pick{margin:10px 0 12px;text-align:left}.pick-label{display:block;font-size:12px;letter-spacing:.2em;opacity:.65;margin-bottom:6px}
+.chars,.modes{display:flex;gap:6px;flex-wrap:wrap}
+.chars button,.modes button{flex:1;min-width:70px;border:1.5px solid #d3e6de;background:#fff;border-radius:14px;padding:7px 6px;font-size:14px;display:flex;align-items:center;justify-content:center;gap:6px;transition:.15s}
+.chars button[aria-pressed="true"],.modes button[aria-pressed="true"]{border-color:var(--jade);background:var(--jade-soft);font-weight:700}
+.desc{font-size:12px;opacity:.75;margin:6px 2px 0;min-height:1.4em}
+.char-dot{display:inline-block;width:16px;height:16px;border-radius:50%;box-shadow:inset -2px -3px 4px rgba(0,0,0,.12),inset 2px 2px 3px rgba(255,255,255,.8)}
+.char-dot.big{width:56px;height:56px}
+.char-yao{background:#8ee3c1}.char-nuo{background:#fff8f0;border:1px solid #f0dcd4}.char-lin{background:#ffbb55}.char-koi{background:radial-gradient(circle at 65% 35%,#ff6a3d 0 30%,#fff1ec 32%)}
+.chapters .stars{color:#e0a43a;letter-spacing:1px;margin-left:4px}
+.links{display:flex;gap:14px;justify-content:center}
+#timer{background:var(--glass);backdrop-filter:blur(8px);padding:10px 14px;border-radius:18px;box-shadow:var(--shadow);font-weight:700;font-variant-numeric:tabular-nums}#timer.low{color:#d1453b}
+.hud-top nav button.off{opacity:.45}#btn-codex.new::after{content:'';position:absolute;width:9px;height:9px;border-radius:50%;background:#e2574c;margin:-14px 0 0 12px}
+#btn-codex{position:relative}
+/* 结算 */
+#clear{position:fixed;inset:0;display:grid;place-items:center;z-index:25;background:rgba(255,250,240,.35);backdrop-filter:blur(2px);padding:16px}
+.clear-box{background:var(--glass);backdrop-filter:blur(12px);border-radius:28px;box-shadow:var(--shadow);padding:26px 30px;text-align:center;width:min(380px,100%);animation:pop .45s cubic-bezier(.2,1.6,.4,1)}
+.clear-box h2{margin:10px 0 12px;letter-spacing:.12em}
+.star-list{list-style:none;padding:0;margin:0 0 14px;display:grid;gap:6px;text-align:left}.star-list li{display:flex;gap:10px;align-items:center;background:#fff;border-radius:12px;padding:7px 12px;opacity:.55}.star-list li.on{opacity:1}.star-list span{font-size:22px;color:#e0a43a;width:24px}
+@keyframes pop{0%{transform:scale(.6);opacity:0}100%{transform:scale(1);opacity:1}}
+/* 图鉴 */
+dialog.wide{max-width:min(720px,calc(100% - 24px));width:100%}
+#codex h2 small{display:inline;font-size:13px;opacity:.6;margin-left:8px}
+#codex-grid h3{font-size:13px;letter-spacing:.3em;opacity:.6;margin:14px 0 8px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+.card{border:0;background:#fff;border-radius:16px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;box-shadow:0 3px 10px rgba(36,65,60,.08);min-height:118px;justify-content:center}
+.card b{font-size:16px}.card small{font-size:11px;opacity:.65;text-align:center;line-height:1.4}
+.card.locked{background:#f1f1ec;cursor:default}.card.locked .glyph,.card.locked .char-dot,.card.locked .know{filter:grayscale(1);opacity:.35}
+.know{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--jade-soft);font-style:normal;font-weight:700}
+.glyph.hex{gap:2px}.glyph.hex i{height:3px}.glyph.big.hex{gap:5px}.glyph.big.hex i{height:7px}
+.back{border:0;background:none;font-size:14px;opacity:.7;padding:0;margin-bottom:8px}
+.detail-head{display:flex;gap:18px;align-items:center;margin-bottom:10px}.detail-head h3{margin:0;font-size:26px}.detail-head small{opacity:.65}
+#codex-detail .one{font-size:16px;line-height:1.8}#codex-detail .key{font-weight:600;color:var(--jade)}

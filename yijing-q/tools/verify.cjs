@@ -51,9 +51,21 @@ async function route(p,points,label){
       if(label==='server'){await p.waitForTimeout(800);await p.screenshot({path:path.join(out,'01-title.png')});check(label+': 无运行时错误',errors.length===0,errors);await p.close();continue;}
 
       // ---------- dist：完整流程 ----------
+      await p.evaluate(()=>{try{localStorage.clear();}catch{}});await p.reload();await p.waitForFunction(()=>window.__Q?.ready,null,{timeout:180000});
+      // 四个角色：逐个选择，截图；能力一致（同样输入，同样位移）
+      const chars={};
+      for(const k of ['nuo','lin','koi','yao']){await p.click(`[data-char="${k}"]`);await p.evaluate(()=>__Q.step(.8));await p.screenshot({path:path.join(out,'00-char-'+k+'.png')});
+        chars[k]=await p.evaluate(()=>{const Q=__Q,P=Q.player;Q.game.mode='play';Q.teleport(0,0,3.5);Q.step(.2,{draw:false});for(let i=0;i<60;i++)Q.step(1/60,{move:{x:0,z:-1},draw:false});const r={kind:Q.mascot.kind,z:+P.z.toFixed(3)};Q.showTitle();return r;});}
+      check('四个角色都能选择并显示',Object.values(chars).map(c=>c.kind).join()==='nuo,lin,koi,yao',chars);
+      check('四个角色能力完全一致（同样输入位移相同）',new Set(Object.values(chars).map(c=>c.z)).size===1,chars);
+      check('选中的角色记入存档',await p.evaluate(()=>__Q.save.char==='yao'));
+      await p.click('[data-char="nuo"]');
       await p.click('#btn-start');
       await p.evaluate(()=>__Q.step(.6));
       await p.screenshot({path:path.join(out,'02-kan-start.png')});
+      await p.waitForTimeout(1200);
+      const music=await p.evaluate(()=>__Q.sfx._debug());
+      check('音乐：第一境播放坎（羽调）主题，并在推进',music.ctx&&music.themeName==='kan'&&music.step>4,music);
       // 弹跳形变：走路时自动小跳，身体在压扁与拉长之间变化
       const bounce=await p.evaluate(()=>{const Q=__Q,P=Q.player,sq=Q.mascot.root.children[0].children[0];let hops=0,wasG=true,minS=9,maxS=0;const x0=P.x,z0=P.z;
         for(let i=0;i<72;i++){Q.step(1/60,{move:{x:0,z:-1},draw:false});if(wasG&&!P.grounded)hops++;wasG=P.grounded;minS=Math.min(minS,sq.scale.y);maxS=Math.max(maxS,sq.scale.y);}
@@ -86,8 +98,15 @@ async function route(p,points,label){
       const kan4=await route(p,[{x:0,z:-29.6},{x:.8,z:-31.7},{x:.73,z:-33.8},{x:-.14,z:-35.9},{x:-.86,z:-38},{x:0,z:-39.4}],'第一境·石桥');
       await p.evaluate(()=>{__Q.cam.targetYaw=__Q.cam.yaw=.3;__Q.step(.3);});await p.screenshot({path:path.join(out,'05-kan-gate.png')});
       await p.evaluate(()=>{const Q=__Q;for(let i=0;i<240&&Q.game.mode==='play';i++)Q.step(1/60,{move:{x:0,z:-1},draw:false});});
+      await p.waitForFunction(()=>__Q.game.mode==='clear',null,{timeout:60000});await p.waitForTimeout(500);
+      const clear1=await p.evaluate(()=>({stars:[...document.querySelectorAll('#clear-stars li')].map(l=>l.className==='on'),saved:__Q.save.stars.kan,codex:__Q.save.codex.slice()}));
+      check('第一境：走进卦门，出现结算（通关星亮、星数记入存档）',clear1.stars[0]&&clear1.saved>=1,clear1);
+      check('图鉴：第一境解锁 爻位 / 坎 / 五音',['yaowei','kan','wuyin'].every(i=>clear1.codex.includes(i)),clear1.codex);
+      await p.screenshot({path:path.join(out,'05b-kan-clear.png')});
+      await p.click('#btn-next');
       await p.waitForFunction(()=>__Q.game.levelIndex===1&&__Q.game.mode==='play',null,{timeout:60000});
-      check('第一境：走进卦门，进入第二境',true,{cleared:await p.evaluate(()=>__Q.game.cleared)});
+      check('第一境：点「继续」进入第二境',true,{cleared:await p.evaluate(()=>__Q.game.cleared)});
+      await p.waitForTimeout(800);check('音乐：第二境切换为离（徵调）主题',await p.evaluate(()=>__Q.sfx._debug().themeName==='li'));
       await p.evaluate(()=>__Q.step(.6));await p.screenshot({path:path.join(out,'06-li-start.png')});
 
       // 第二境 路线：火塘取火 → 木桥 → 点燃「初」→ 回火塘 → 升降台 → 横移石 → 点燃「三」→ 石阶下山 → 盖灭「二」→ 回起点 → 石墩 → 卦门
@@ -106,6 +125,7 @@ async function route(p,points,label){
       const li4=await route(p,[{x:-8.4,z:-6},{x:-6.9,z:-3.9,jump:true},{x:-5.4,z:-3,jump:true},{x:-3,z:1.5},{x:3,z:1.5},{x:4.5,z:-.6},{x:7.6,z:-1.9},{x:11.5,z:-5.6},{x:13.4,z:-8.6,jump:true},{x:14,z:-10.8},{x:14.6,z:-13},{x:15,z:-16,jump:true}],'第二境·去卦门');
       await p.evaluate(()=>{__Q.cam.targetYaw=__Q.cam.yaw=.2;__Q.step(.3);});await p.screenshot({path:path.join(out,'09-li-gate.png')});
       await p.evaluate(()=>{const Q=__Q;for(let i=0;i<300&&Q.game.mode==='play';i++){const P=Q.player,dx=15.3-P.x,dz=-20.6-P.z,l=Math.hypot(dx,dz)||1;Q.step(1/60,{move:{x:dx/l,z:dz/l},draw:false});}});
+      await p.waitForFunction(()=>__Q.game.mode==='clear',null,{timeout:60000});await p.click('#btn-next');
       await p.waitForFunction(()=>__Q.game.mode==='end',null,{timeout:60000});await p.waitForTimeout(400);
       const end=await p.evaluate(()=>({mode:__Q.game.mode,cleared:__Q.game.cleared,gems:document.getElementById('end-gems').textContent,map:[...document.querySelectorAll('#end-map .node.done > b')].map(b=>b.textContent)}));
       check('第二境：走进卦门，出现结局与八卦方位图（坎、离点亮）',end.mode==='end'&&end.map.join()==='坎,离',end);
@@ -113,8 +133,18 @@ async function route(p,points,label){
       // 考据弹窗
       await p.evaluate(()=>{document.getElementById('end').hidden=true;});await p.click('#btn-lore');await p.waitForTimeout(300);await p.screenshot({path:path.join(out,'11-lore.png')});
       const lore=await p.evaluate(()=>document.getElementById('lore-quotes').innerText);check('考据弹窗：引文均注明出处',/说卦传/.test(lore)&&/象传/.test(lore)&&/八卦取象歌/.test(lore),lore.split('\n').slice(0,4));
+      // 图鉴
+      await p.evaluate(()=>{document.getElementById('lore').close();__Q.openCodex();});await p.waitForTimeout(300);await p.screenshot({path:path.join(out,'11b-codex.png')});
+      await p.click('[data-card="wuyin"]');await p.waitForTimeout(300);await p.screenshot({path:path.join(out,'11c-codex-wuyin.png')});
+      const card=await p.evaluate(()=>document.getElementById('codex-detail').innerText);check('图鉴卡：五音卡引《礼记·月令》',/礼记·月令/.test(card)&&/其音羽/.test(card),card.split('\n').slice(0,3));
+      await p.evaluate(()=>document.getElementById('codex').close());
+      // 挑战模式：显示计时；落水回到本境起点；超时重开
+      const ch=await p.evaluate(()=>{const Q=__Q;Q.setChallenge(true);Q.start(0);Q.step(.3,{draw:false});const timer=!document.getElementById('timer').hidden;
+        Q.teleport(-1.2,.2,-8.4);Q.step(.4,{draw:false});Q.player.checkpoint={x:-1.2,y:.2,z:-8.4};Q.teleport(3,.5,-9.5);Q.step(1.6,{draw:false});const back=[+Q.player.x.toFixed(2),+Q.player.z.toFixed(2)];
+        Q.game.levelTime=Q.game.timeLimit-.05;Q.step(.2,{draw:false});const reset=Q.game.levelTime<1;Q.setChallenge(false);return {timer,back,reset};});
+      check('挑战模式：计时显示、落水回本境起点、超时重开',ch.timer&&Math.hypot(ch.back[0]-0,ch.back[1]-3.5)<.6&&ch.reset,ch);
       // 近景：玉团子
-      await p.evaluate(()=>{document.getElementById('lore').close();__Q.loadLevel(0);__Q.game.mode='play';const c=__Q.cam;c.targetDist=c.dist=3.6;c.targetPitch=c.pitch=.22;c.targetYaw=c.yaw=.35;__Q.step(.5);});
+      await p.evaluate(()=>{__Q.start(0);const c=__Q.cam;c.targetDist=c.dist=3.6;c.targetPitch=c.pitch=.22;c.targetYaw=c.yaw=.35;__Q.step(.5);});
       await p.screenshot({path:path.join(out,'12-yaoyao-closeup.png')});
       check('dist: 全程无运行时错误',errors.length===0,errors);
       await p.close();
