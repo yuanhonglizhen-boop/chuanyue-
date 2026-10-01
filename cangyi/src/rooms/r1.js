@@ -61,13 +61,13 @@ export function buildRoom1(ctx){
   function check(d){if(d.open)return;if(d.state.every((v,i)=>v===TARGET[d.name][i])){d.open=true;sfx.unlock_();ctx.toast('「'+d.name+'」屉开了。');ctx.setFlag('drawer-'+d.name);
       if(drawers.every(x=>x.open)){ctx.setFlag('drawers');ctx.milestone(1);showKey();ctx.toast('四屉皆开——柜顶亮起一把金钥匙。');sfx.solve();}}}
   // 门钥
-  const key=new T.Group();key.position.set(0,1.95,.75);cab.add(key);key.visible=false;/* 悬在柜前上方：站在柜前也不会被柜沿挡住 */
+  const key=new T.Group();key.position.set(0,2.25,1.05);cab.add(key);key.visible=false;/* 悬在柜前上方：不会被柜沿和拉出的抽屉挡住 */
   W.mesh(new T.TorusGeometry(.08,.02,8,20),W.M.gold,-.12,0,0,key);W.mesh(new T.BoxGeometry(.26,.03,.03),W.M.gold,.05,0,0,key);W.mesh(new T.BoxGeometry(.03,.07,.03),W.M.gold,.15,-.04,0,key);
   const keyLight=new T.PointLight('#ffd27a',0,2.2,2);keyLight.position.set(0,.2,0);key.add(keyLight);
   function showKey(){key.visible=true;keyLight.intensity=1.6;}
   W.interact(key,{label:'拿起金钥匙',range:2.6,enabled:()=>key.visible,onClick:()=>{key.visible=false;keyLight.intensity=0;ctx.inv.add('key1');sfx.pickup();ctx.setFlag('key1');ctx.toast('得到：门钥。');}});
 
-  W.updaters.push((dt,t)=>{drawers.forEach(d=>{if(d.open&&d.t<1){d.t=Math.min(1,d.t+dt*1.6);d.group.position.z=.36+d.t*.42;}});if(key.visible){key.rotation.y=t*1.5;key.position.y=1.95+Math.sin(t*2)*.04;}});
+  W.updaters.push((dt,t)=>{drawers.forEach(d=>{if(d.open&&d.t<1){d.t=Math.min(1,d.t+dt*1.6);d.group.position.z=.36+d.t*.42;}});if(key.visible){key.rotation.y=t*1.5;key.position.y=2.25+Math.sin(t*2)*.04;}});
 
   // 读档恢复
   function restore(f){for(const d of drawers)if(f['drawer-'+d.name]){TARGET[d.name].forEach((v,i)=>d.state[i]=v);d.bars.forEach(b=>b.show());d.open=true;d.t=1;d.group.position.z=.78;}
