@@ -38,9 +38,12 @@ export function buildRoom2(ctx){
   // 卦牌：初始打乱
   let order=['坎','震','乾','巽','离','坤','兑','艮'];
   const tiles=order.map((name,i)=>{const g=new T.Group();W.root.add(g);
-    const face=W.mesh(new T.PlaneGeometry(.56,.7),new T.MeshStandardMaterial({map:trigramTex(TRI[name],{name}),roughness:.35,metalness:.25,side:T.DoubleSide}),0,0,0,g);
-    W.mesh(new T.BoxGeometry(.62,.76,.04),W.M.gold,0,0,-.03,g);
-    const glow=W.mesh(new T.PlaneGeometry(.78,.92),new T.MeshBasicMaterial({color:'#ffd27a',transparent:true,opacity:0,depthWrite:false}),0,0,-.06,g);
+    /* 正反两面都画卦，台外台内都能认出 */
+    const faceMat=new T.MeshStandardMaterial({map:trigramTex(TRI[name],{name}),roughness:.35,metalness:.25});
+    const face=W.mesh(new T.PlaneGeometry(.56,.7),faceMat,0,0,.025,g);
+    const back=W.mesh(new T.PlaneGeometry(.56,.7),faceMat,0,0,-.025,g);back.rotation.y=Math.PI;
+    W.mesh(new T.BoxGeometry(.62,.76,.04),W.M.gold,0,0,0,g);
+    const glow=W.mesh(new T.PlaneGeometry(.78,.92),new T.MeshBasicMaterial({color:'#ffd27a',transparent:true,opacity:0,depthWrite:false,side:T.DoubleSide}),0,0,0,g);glow.scale.z=1;
     const tile={name,group:g,glow,slot:i,cur:new T.Vector3()};place(tile,true);
     W.interact(g,{label:'卦牌 · '+name,range:3.3,enabled:()=>!ctx.flag('octagon'),onClick:()=>pick(tile)});return tile;});
   function place(tile,instant){const s=slots[tile.slot];tile.target=new T.Vector3(s.x,1.15,s.z);tile.rot=s.angle;if(instant){tile.group.position.copy(tile.target);tile.cur.copy(tile.target);}tile.group.rotation.y=s.angle;}

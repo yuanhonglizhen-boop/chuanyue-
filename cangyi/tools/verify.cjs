@@ -32,7 +32,7 @@ const check=(n,ok,d)=>{report.checks.push({name:n,ok:!!ok,detail:d});console.log
     // 工具：走到某点（不瞬移）
     const walk=(x,z,max=12)=>p.evaluate(({x,z,max})=>{const C=__C,P=C.P;for(let i=0;i<max*60;i++){const dx=x-P.x,dz=z-P.z,d=Math.hypot(dx,dz);if(d<.15){C.step(1/60);return true;}C.step(1/60,{move:{x:dx/d,z:dz/d},draw:false});}C.step(1/60);return false;},{x,z,max});
     // 工具：把物体投到屏幕上用真实鼠标点一下
-    const clickObj=async(expr)=>{let pos=await p.evaluate(e=>{const o=eval(e);const v=new (__C.camera.position.constructor)();o.getWorldPosition(v);__C.lookAt(v.x,v.y,v.z);return __C.screenOf(o);},expr);let hit=await p.evaluate(({x,y})=>__C.pickAt(x,y),pos);
+    const clickObj=async(expr)=>{let pos=await p.evaluate(e=>{const o=eval(e);const v=new (__C.camera.position.constructor)();o.getWorldPosition(v);__C.lookAt(v.x,v.y,v.z);__C.step(1/60,{draw:false});o.getWorldPosition(v);__C.lookAt(v.x,v.y,v.z);return __C.screenOf(o);},expr);/* 第一人称时让身体朝向跟上视线，再取屏幕位置 */let hit=await p.evaluate(({x,y})=>__C.pickAt(x,y),pos);
       // 被挡住：像玩家一样往后退一步再点
       for(let k=0;k<3&&hit?.type!=='interact';k++){console.log('  (被挡住：'+JSON.stringify(hit)+'，后退一步再点 '+expr+')');
         pos=await p.evaluate(e=>{const C=__C,o=eval(e),v=new (C.camera.position.constructor)();o.getWorldPosition(v);const dx=C.P.x-v.x,dz=C.P.z-v.z,l=Math.hypot(dx,dz)||1;for(let i=0;i<24;i++)C.step(1/60,{move:{x:dx/l,z:dz/l},draw:false});C.lookAt(v.x,v.y,v.z);return C.screenOf(o);},expr);
@@ -79,13 +79,13 @@ const check=(n,ok,d)=>{report.checks.push({name:n,ok:!!ok,detail:d});console.log
     // ---------- 第二间 ----------
     await walk(0,-6.2);await walk(0,-9.2);await p.evaluate(()=>__C.step(.5));await shot(p,'08-xiantian');
     check('进入先天室，音乐换成羽调主题',await p.evaluate(()=>__C.currentRoom()==='r2'));
-    await walk(-4,-9.2);await walk(-4,-12.5);await clickObj('__C.rooms[1].scroll');const td=await p.evaluate(()=>document.getElementById('read-src').innerText);check('读挂轴：天地定位（《说卦传》）',/说卦传/.test(td),td);await closeDlg('read');
+    await walk(-4,-9.2);await walk(-4,-12.5);await p.evaluate(()=>__C.setView('first'));await clickObj('__C.rooms[1].scroll');await p.evaluate(()=>__C.setView('third'));const td=await p.evaluate(()=>document.getElementById('read-src').innerText);check('读挂轴：天地定位（《说卦传》）',/说卦传/.test(td),td);await closeDlg('read');
     await walk(-4,-9.2);await walk(4,-9.2);await walk(4,-12.5);await clickObj('__C.rooms[1].stele');const xo=await p.evaluate(()=>document.getElementById('read-body').innerText);check('读石碑：先天次序（注明宋人之说）',/乾一/.test(xo)&&await p.evaluate(()=>/宋人/.test(document.getElementById('read-src').innerText)));await closeDlg('read');
     // 八角台：站在台心，第一人称，逐一点击交换
     await walk(4,-9.2);await walk(1.05,-9.6);await walk(0,-12.5);await p.evaluate(()=>__C.setView('first'));
     const ANSWER=await p.evaluate(()=>__C.rooms[1].answer);let swaps=0;
     for(let k=0;k<8;k++){const st=await p.evaluate(({k,A})=>{const t=__C.rooms[1].tiles;const occ=t.findIndex(x=>x.slot===k),want=t.findIndex(x=>x.name===A[k]);return {occ,want};},{k,A:ANSWER});
-      if(st.occ===st.want)continue;await clickObj(`__C.rooms[1].tiles[${st.occ}].group`);await clickObj(`__C.rooms[1].tiles[${st.want}].group`);swaps++;await p.evaluate(()=>__C.step(.3));}
+      if(st.occ===st.want)continue;await walk(0,-12.5);await clickObj(`__C.rooms[1].tiles[${st.occ}].group`);await walk(0,-12.5);await clickObj(`__C.rooms[1].tiles[${st.want}].group`);swaps++;await p.evaluate(()=>__C.step(.3));}
     await p.evaluate(()=>__C.step(.6));await shot(p,'09-octagon');
     check('八角台：交换卦牌排成先天方位（乾南坤北、离东坎西……），台心升起铜箱',await p.evaluate(()=>__C.save.flags.octagon&&__C.save.notes.includes('xiantian')),{swaps});
     await p.evaluate(()=>{__C.setView('third');__C.step(2.6);});await walk(0,-11.2);await p.evaluate(()=>__C.setView('first'));
