@@ -1,7 +1,7 @@
-const {chromium}=require('C:/Users/宋/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const {chromium,dist}=require('./tools/browser.cjs');
 const fs=require('node:fs'),assert=require('node:assert/strict'),{pathToFileURL}=require('node:url');
-const out='E:/video-outputs/yijing-rain-garden/adventure-v6';
-(async()=>{const b=await chromium.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});const p=await b.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:1}),checks=[],errors=[];p.on('pageerror',e=>errors.push(String(e)));await p.route(/^https?:/,r=>r.abort());const check=(name,result)=>{assert(result,name);checks.push(name);console.log('PASS '+name);};try{
+const out=dist;
+(async()=>{const b=await chromium.launch({headless:true});const p=await b.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:1}),checks=[],errors=[];p.on('pageerror',e=>errors.push(String(e)));await p.route(/^https?:/,r=>r.abort());const check=(name,result)=>{assert(result,name);checks.push(name);console.log('PASS '+name);};try{
 await p.goto(pathToFileURL(out+'/易境-雨后通途.html').href);await p.waitForFunction(()=>window.__READY);await p.waitForTimeout(600);
 check('390px layout has no horizontal overflow',await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
 const rects=await p.locator('[data-station^="pipe"]').evaluateAll(es=>es.map(e=>{const r=e.getBoundingClientRect();return {l:r.left,r:r.right,t:r.top,b:r.bottom};}));check('Mobile pipe targets do not overlap',rects.every((a,i)=>rects.slice(i+1).every(b=>a.r<=b.l||b.r<=a.l||a.b<=b.t||b.b<=a.t)));

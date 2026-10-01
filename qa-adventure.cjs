@@ -1,7 +1,7 @@
-const {chromium}=require('C:/Users/宋/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const {chromium,dist}=require('./tools/browser.cjs');
 const assert=require('node:assert/strict'),fs=require('node:fs'),{pathToFileURL}=require('node:url');
-const out='E:/video-outputs/yijing-rain-garden/adventure-v6';
-(async()=>{const browser=await chromium.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});const page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[],checks=[];page.on('pageerror',e=>errors.push(String(e)));await page.route(/^https?:/,r=>r.abort());const pass=(name)=>{checks.push(name);console.log('PASS '+name);};
+const out=dist;
+(async()=>{const browser=await chromium.launch({headless:true});const page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[],checks=[];page.on('pageerror',e=>errors.push(String(e)));await page.route(/^https?:/,r=>r.abort());const pass=(name)=>{checks.push(name);console.log('PASS '+name);};
 try{await page.goto(pathToFileURL(out+'/易境-雨后通途.html').href);await page.waitForFunction(()=>window.__READY);await page.waitForTimeout(500);await page.evaluate(()=>{window.__panelClicks=0;document.querySelector('#panel').addEventListener('click',()=>__panelClicks++);});
 assert.equal(await page.locator('#submit,#flow,.yao').count(),0);pass('No remote puzzle controls');
 assert.equal(await page.evaluate(()=>__game.adventure.act('pipe0')),false);assert.deepEqual(await page.evaluate(()=>__game.adventure.quest.pipes),[1,3,1]);pass('Remote interaction rejected');
