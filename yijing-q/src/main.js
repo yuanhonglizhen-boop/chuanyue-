@@ -142,7 +142,8 @@ function openLevels(){
     return '<button data-goto="'+i+'">'+glyph(L.lines)+'<span><b>'+L.title+'</b><small>'+L.sub+(best?' · 最佳 '+fmt(best):'')+'</small></span><em>'+'★'.repeat(st)+'☆'.repeat(3-st)+'</em></button>';}).join('');
   $('level-list').querySelectorAll('[data-goto]').forEach(b=>b.onclick=()=>{$('levels').close();startGame(Number(b.dataset.goto));});
   $('levels').showModal();sfx.ui();}
-$('btn-levels').onclick=openLevels;$('btn-codex-title').onclick=openCodex;
+$('btn-levels').onclick=openLevels;
+$('btn-home').onclick=()=>{closeDialogs();$('fade').classList.remove('on');sfx.ui();showTitle();};$('btn-codex-title').onclick=openCodex;
 $('btn-lore').onclick=()=>openLore(game.level.id);
 $('btn-about').onclick=()=>{$('about-body').innerHTML=ABOUT.body.map(p=>'<p>'+p+'</p>').join('');$('about').showModal();sfx.ui();};
 $('btn-help').onclick=()=>{$('help').showModal();sfx.ui();};

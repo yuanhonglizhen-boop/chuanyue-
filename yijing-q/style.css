@@ -129,3 +129,4 @@ body[data-level="jiji"]{background:#ffe1c6}
 @media (max-width:560px){.hud-top nav button{width:32px;height:32px;font-size:14px}.hud-top nav{gap:3px}}
 #levels{width:min(440px,calc(100% - 24px))}.level-list b{white-space:nowrap}
 .level-list .glyph{width:34px;flex:none}
+@media (max-width:560px){.hud-top{flex-wrap:wrap}.hud-top nav{flex-basis:100%;justify-content:flex-end;margin-left:0}}

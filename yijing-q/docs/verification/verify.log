@@ -6,8 +6,8 @@ PASS dist: 无失败请求  []
 PASS 四个角色都能选择并显示  {"nuo":{"kind":"nuo","z":-0.754},"lin":{"kind":"lin","z":-0.754},"koi":{"kind":"koi","z":-0.754},"yao":{"kind":"yao","z":-0.754}}
 PASS 四个角色能力完全一致（同样输入位移相同）  {"nuo":{"kind":"nuo","z":-0.754},"lin":{"kind":"lin","z":-0.754},"koi":{"kind":"koi","z":-0.754},"yao":{"kind":"yao","z":-0.754}}
 PASS 选中的角色记入存档
-PASS 音乐：第一境播放坎（羽调）主题，并在推进  {"ctx":true,"themeName":"kan","layer":2,"step":82,"section":0,"musicGain":0.41999998688697815,"musicMuted":false}
-PASS 音乐按钮：关闭后完全静音（峰值为 0），再点恢复  {"on":0.0892,"off":0,"back":0.0665}
+PASS 音乐：第一境播放坎（羽调）主题，并在推进  {"ctx":true,"themeName":"kan","layer":2,"step":81,"section":0,"musicGain":0.41999998688697815,"musicMuted":false}
+PASS 音乐按钮：关闭后完全静音（峰值为 0），再点恢复  {"on":0.0942,"off":0,"back":0.0792}
 PASS 走路 1.2 秒：移动并自动蹦跳  {"hops":5,"minScaleY":0.915,"maxScaleY":1.147,"moved":5.88}
 PASS 果冻形变：落地压扁 <0.92、腾空拉长 >1.05  {"hops":5,"minScaleY":0.915,"maxScaleY":1.147,"moved":5.88}
 PASS 跳跃与二段跳（二段跳更高）  {"single":1.37,"double":2.28}
@@ -48,9 +48,11 @@ PASS 考据弹窗（第三境）：卦辞、《彖传》、《象传》均注明
 PASS 图鉴卡：五音卡引《礼记·月令》  ["← 返回","五音","gōng shāng jué zhǐ yǔ"]
 PASS 挑战模式：计时显示、落水回本境起点、超时重开  {"timer":true,"back":[0,3.5],"reset":true}
 PASS 选关：游戏中可直接跳到第三境
+PASS 🏠 按钮：游戏中回到开始页面
 PASS dist: 全程无运行时错误  []
 PASS 390px 手机：无横向溢出
 PASS 手机：显示摇杆与跳跃键，顶栏不折行  {"joystick":true,"jump":true,"titleOneLine":true,"gemsOneLine":true}
-PASS 手机：摇杆向上推，团子向前走  {"before":3.5,"after":-1.16}
+PASS 手机：顶栏所有按钮都在屏幕内  []
+PASS 手机：摇杆向上推，团子向前走  {"before":3.5,"after":-0.64}
 PASS 手机：无运行时错误  []
-ALL PASSED (55)
+ALL PASSED (57)

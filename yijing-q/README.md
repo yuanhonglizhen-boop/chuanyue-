@@ -102,7 +102,7 @@ npm run verify     # 自动验证（需先 build）：不瞬移，真实走跳�
 
 ## 验证结果
 
-`npm run verify` 共 55 项检查，全部通过。报告见 `docs/verification/verify-report.json`，日志见 `verify.log`，截图在 `docs/verification/`。
+`npm run verify` 共 57 项检查，全部通过。报告见 `docs/verification/verify-report.json`，日志见 `verify.log`，截图在 `docs/verification/`。
 
 验证方式是：**不瞬移，按真实路线自动走、跳、变身、搬运，打通三境**。覆盖的内容有：
 - 四个角色的手感与能力一致性；

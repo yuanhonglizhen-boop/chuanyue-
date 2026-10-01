@@ -134,6 +134,9 @@ const {route:runRoute}=require('./route.cjs');const {runJiji}=require('./verify-
       await p.evaluate(()=>__Q.start(0));await p.click('#btn-levels');await p.waitForTimeout(300);await p.screenshot({path:path.join(out,'11d-levels.png')});
       await p.click('[data-goto="2"]');await p.waitForTimeout(300);
       check('选关：游戏中可直接跳到第三境',await p.evaluate(()=>__Q.game.levelIndex===2&&__Q.game.mode==='play'&&__Q.level.id==='jiji'));
+      await p.click('#btn-home');await p.waitForTimeout(400);
+      check('🏠 按钮：游戏中回到开始页面',await p.evaluate(()=>__Q.game.mode==='title'&&!document.getElementById('title').hidden&&__Q.sfx._debug().themeName==='title'));
+      await p.screenshot({path:path.join(out,'11e-home.png')});
             // 近景：玉团子
       await p.evaluate(()=>{__Q.start(0);const c=__Q.cam;c.targetDist=c.dist=3.6;c.targetPitch=c.pitch=.22;c.targetYaw=c.yaw=.35;__Q.step(.5);});
       await p.screenshot({path:path.join(out,'12-yaoyao-closeup.png')});
@@ -147,6 +150,8 @@ const {route:runRoute}=require('./route.cjs');const {runJiji}=require('./verify-
       await m.tap('#btn-start');await m.evaluate(()=>__Q.step(.4));
       const hud=await m.evaluate(()=>{const r=id=>document.getElementById(id).getBoundingClientRect();const t=document.querySelector('.badge strong');return {joystick:getComputedStyle(document.getElementById('joystick')).display!=='none',jump:getComputedStyle(document.getElementById('btn-jump')).display!=='none',titleOneLine:t.getBoundingClientRect().height<30,gemsOneLine:r('gems').height<30};});
       check('手机：显示摇杆与跳跃键，顶栏不折行',hud.joystick&&hud.jump&&hud.titleOneLine&&hud.gemsOneLine,hud);
+      const navOut=await m.evaluate(()=>[...document.querySelectorAll('.hud-top nav button')].filter(b=>{const r=b.getBoundingClientRect();return r.right>innerWidth||r.left<0;}).map(b=>b.title));
+      check('手机：顶栏所有按钮都在屏幕内',navOut.length===0,navOut);
       const x0=await m.evaluate(()=>__Q.player.z);const jb=await m.locator('#joystick').boundingBox();
       // 真实触摸事件（CDP）：按住摇杆中心，向上拖到边缘
       const cdp=await m.context().newCDPSession(m),cx=jb.x+jb.width/2,cy=jb.y+jb.height/2;
