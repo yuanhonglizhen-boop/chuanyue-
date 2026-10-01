@@ -1,0 +1,10 @@
+const fs=require('node:fs'),path=require('node:path'),{pathToFileURL}=require('node:url'),assert=require('node:assert/strict');
+const {chromium}=require('C:/Users/宋/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const root='E:/video-outputs/yijing-rain-garden',out=root+'/art-v4';
+(async()=>{const browser=await chromium.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true,args:['--disable-dev-shm-usage']}),stats={};
+try{for(const [name,folder] of [['before',root],['after',out]]){const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});await page.route(/^https?:/,r=>r.abort());await page.goto(pathToFileURL(folder+'/易境-雨后通途.html').href);await page.waitForFunction(()=>window.__READY);for(const i of [0,1,2])await page.locator('#lower-lines button').nth(i).click();await page.locator('#submit').click();await page.waitForTimeout(4300);await page.screenshot({path:out+'/'+name+'-full.png'});await page.screenshot({path:out+'/'+name+'-detail.png',clip:{x:300,y:240,width:605,height:440}});
+const perf=await page.evaluate(()=>new Promise(resolve=>{let last=performance.now(),delta=[],frames=0;function sample(now){delta.push(now-last);last=now;if(++frames<90)requestAnimationFrame(sample);else{delta.sort((a,b)=>a-b);resolve({medianMs:delta[45],p95Ms:delta[85],meanMs:delta.reduce((s,n)=>s+n,0)/90,canvas:[__game.renderer.domElement.width,__game.renderer.domElement.height]});}}requestAnimationFrame(sample);}));
+// Touch control is checked on a true mobile-sized, touch-enabled page separately by the regression suite.
+assert.deepEqual(errors,[]);stats[name]={...perf,errors};await page.close();}
+fs.writeFileSync(out+'/comparison-report.json',JSON.stringify(stats,null,2));console.log(JSON.stringify(stats));
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

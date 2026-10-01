@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#172d2b"><title>易境 · 雨后通途</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="adventure.css">
+  <style>.views button[aria-pressed="true"]{background:#355e50;color:#fff4d9;border-color:#355e50}@media(max-width:500px){.scene-bottom{gap:8px}.gesture{max-width:150px;line-height:1.7}.views{flex-shrink:0}}</style>
+</head>
+<body>
+  <header><a class="brand" href="#" aria-label="易境首页"><span class="seal">易</span><span>易境<small>山水机关</small></span></a><div class="chapter">第一境<span>雷水解</span></div><nav><button id="sound" aria-pressed="false">声音 关</button><button id="about">关于此境</button><button id="reset">重新开始</button></nav></header>
+  <main>
+    <section id="world" aria-label="可以拖动旋转的三维山水庭院">
+      <div class="scene-title"><span class="eyebrow">一场雨，一条归路</span><h1>雨后通途</h1><p>读山水之象，解眼前之结。</p></div>
+      <div id="canvas-wrap"></div>
+      <div id="loading">正在铺开山水…</div>
+      <div id="scene-tags"><button id="water-tag" class="scene-tag" aria-label="查看水边石碑">水边石碑 <span>＋</span></button><button id="thunder-tag" class="scene-tag" aria-label="查看雷纹石碑">雷纹石碑 <span>＋</span></button><button id="gate-tag" class="scene-tag">山门 <span>＋</span></button></div>
+      <div id="adventure-tags"></div>
+      <div class="interaction-hud"><div><strong id="interaction-title">在庭院里寻找机关</strong><span id="interaction-help">WASD 行走 · 点机关走近</span></div><button id="decrease" hidden aria-label="关小水闸">Q −</button><button id="interact" disabled>E · 操作</button></div>
+      <div id="toast" role="status" aria-live="polite"></div>
+      <div class="scene-bottom"><span class="gesture">WASD / 点地面行走 · 拖动环看<br><small>滚轮缩放 · 按当前视角行走，松键即停</small></span><div class="views"><button id="mouse-follow" aria-pressed="false">随鼠标走</button><button id="view-home" aria-label="恢复初始视角">归位</button><button id="view-top" aria-label="俯视庭院">俯视</button></div></div>
+      <div class="weather"><span id="weather-dot"></span><span id="weather">山雨未至</span></div>
+    </section>
+    <aside id="panel">
+      <div class="panel-top"><span>行旅手记</span><span id="progress-text">0 / 4</span></div>
+      <ol class="steps"><li class="active" id="step-0"><b>一</b>引水</li><li id="step-1"><b>二</b>修轮</li><li id="step-2"><b>三</b>鸣雷</li><li id="step-3"><b>四</b>渡桥</li></ol>
+      <div class="task"><span id="task-kicker">行旅目标 · 1</span><h2 id="task-title">把断开的水槽接起来</h2><p id="task-copy">去竹径旁的引水台。转动三段木槽，观察水流是否连通。</p></div>
+      <div class="journal-card"><span class="journal-label">随身行囊</span><strong id="inventory">行囊 · 暂无物品</strong><div class="journal-readout"><span>雷纹节奏</span><output id="rhythm-readout">长 · 短 · 短</output></div><div class="journal-readout"><span>实际水位</span><output id="water-readout">20%</output></div><small id="stability">水轮尚未启动</small></div>
+      <p class="journal-tip">机关都在庭院里。走近后按 <kbd>E</kbd>，或点击屏幕下方的操作键。</p>
+      <button id="hint" class="hint-button">看一点提示 <span>＋</span></button><div id="hint-content" hidden></div>
+      <div class="field-note"><span>行旅手记</span><p id="note">山水各有其性。路不通时，先看阻碍在哪里。</p></div>
+      <footer>据《周易》卦象设计的原创机关游戏</footer>
+    </aside>
+  </main>
+  <dialog id="clue"><button class="close" aria-label="关闭">×</button><span class="eyebrow" id="clue-label">山中石刻</span><h2 id="clue-title"></h2><p id="clue-text"></p><div id="clue-diagram"></div><button class="primary close-action">记下了，试一试 <span>↗</span></button></dialog>
+  <dialog id="about-dialog"><button class="close" aria-label="关闭">×</button><span class="eyebrow">关于此境</span><h2>让变化，成为一条路</h2><p>解卦由上震、下坎组成。震取象为雷，坎取象为水。本作把这些传统取象转化为引水、修轮、敲鼓与稳水开桥的互动。</p><p>卦画自下而上读：坎为阴、阳、阴；震为阳、阴、阴。长短鼓点、木销维修、水槽转向与水位阈值均为原创游戏规则，不是古籍里的操作方法。</p><p>先观察环境，再动手尝试。没有次数限制，也不用在右侧点按钮解题。</p><small>WASD / 点地面行走 · 点机关走近 · E 就近操作<br>雷鼓：长按 0.5 秒，松开，再短按两次<br>水闸：E 开大、Q 关小；触屏用下方操作键<br>拖动环看 · 滚轮缩放 · Esc 关闭说明</small><button class="primary close-action">回到庭院 <span>↗</span></button></dialog>
+  <dialog id="win"><span class="eyebrow">第一境 · 已通</span><div class="win-symbol">䷧</div><h2>雨过，路自开</h2><p>你接通水槽，修好水轮，敲响雷鼓。<br>稳住水势之后，亲自走完了这条归路。</p><div class="win-stats"><div><b id="win-time">0:00</b><span>行旅用时</span></div><div><b id="win-attempts">0</b><span>机关尝试</span></div></div><blockquote>雷雨作，解。<cite>《周易·象传》</cite></blockquote><p class="win-footnote">游戏里的启发：先辨处境，再调整行动。</p><button id="explore" class="primary">留在雨后庭院 <span>↗</span></button><button id="replay" class="hint-button">再走一遍</button></dialog>
+  <script type="module" src="game.js"></script>
+</body></html>

@@ -1,0 +1,19 @@
+/* The journal observes. All gameplay controls stay inside the garden. */
+.steps li{gap:5px;font-size:11px}.steps li b{width:23px;height:23px}
+.journal-card{margin:22px 0 12px;padding:18px;background:#e6eade;border:1px solid #d2dbcd;border-radius:4px}
+.journal-label{display:block;font-size:10px;letter-spacing:2px;color:#829078;margin-bottom:11px}
+.journal-card strong{display:block;font-size:13px;font-weight:500;margin-bottom:21px}
+.journal-readout{display:flex;justify-content:space-between;font-size:11px;line-height:2.5;color:#748170}
+.journal-readout output{color:#496957;font-variant-numeric:tabular-nums}
+#stability{display:block;text-align:right;color:#a26843;font-size:10px;margin-top:8px;font-variant-numeric:tabular-nums}
+.journal-tip{font-size:11px;line-height:1.9;color:#7b8776}kbd{font:11px sans-serif;border:1px solid #c9d3c2;border-radius:3px;padding:2px 4px;color:#496957}
+.interaction-hud{position:absolute;bottom:88px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:13px;padding:13px 14px 13px 18px;width:max-content;max-width:calc(100% - 40px);background:#f5f3e5f2;border:1px solid #c6d2be;box-shadow:0 8px 24px #314b3420;border-radius:5px;z-index:2}
+.interaction-hud>div{min-width:0}.interaction-hud strong{display:block;font-size:12px;font-weight:500;line-height:1.7}.interaction-hud span{display:block;font-size:10px;line-height:1.7;color:#77856d}
+.interaction-hud button{flex-shrink:0;min-height:40px;padding:9px 13px;border-radius:3px;background:#355e50;color:#fff2d5;font-size:11px;touch-action:none;user-select:none}
+.interaction-hud button:disabled{opacity:.32}.interaction-hud button:active:not(:disabled){background:#b37248}
+#decrease{background:#e3e8d8;color:#48614c;border:1px solid #b7c7ad}
+.adventure-tag{z-index:1;border-color:#b5a875;color:#785f39;padding:7px 9px;min-height:29px;box-shadow:0 3px 10px #3c472326;letter-spacing:0}
+.adventure-tag.near{background:#b87743;color:#fff7df;border-color:#9f673d}
+#scene-tags .scene-tag{font-size:9px;padding:5px 7px;opacity:.83}
+#toast{bottom:170px;z-index:2;max-width:calc(100% - 40px)}
+@media(max-width:820px){#world{height:65dvh;min-height:490px;max-height:660px}.scene-title{top:18px}.scene-title h1{font-size:29px}.scene-title p{font-size:9px}.scene-bottom{left:14px;right:14px}.gesture{max-width:128px!important;letter-spacing:0}.views{gap:4px}.views button{padding:8px 7px;font-size:9px}.interaction-hud{bottom:73px;max-width:calc(100% - 24px);gap:8px;padding:10px 11px;width:calc(100% - 24px)}.interaction-hud>div{flex:1}.interaction-hud strong{font-size:11px}.interaction-hud span{font-size:9px}.interaction-hud button{padding:9px;min-width:49px}.adventure-tag{padding:5px 7px;font-size:9px;min-height:27px}#scene-tags .scene-tag{font-size:8px;padding:4px}#toast{bottom:151px;font-size:10px;padding:9px 13px}}

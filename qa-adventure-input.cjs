@@ -1,0 +1,21 @@
+const {chromium}=require('C:/Users/宋/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const fs=require('node:fs'),assert=require('node:assert/strict'),{pathToFileURL}=require('node:url');
+const out='E:/video-outputs/yijing-rain-garden/adventure-v6';
+(async()=>{const b=await chromium.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});const p=await b.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:1}),checks=[],errors=[];p.on('pageerror',e=>errors.push(String(e)));await p.route(/^https?:/,r=>r.abort());const check=(name,result)=>{assert(result,name);checks.push(name);console.log('PASS '+name);};try{
+await p.goto(pathToFileURL(out+'/易境-雨后通途.html').href);await p.waitForFunction(()=>window.__READY);await p.waitForTimeout(600);
+check('390px layout has no horizontal overflow',await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+const rects=await p.locator('[data-station^="pipe"]').evaluateAll(es=>es.map(e=>{const r=e.getBoundingClientRect();return {l:r.left,r:r.right,t:r.top,b:r.bottom};}));check('Mobile pipe targets do not overlap',rects.every((a,i)=>rects.slice(i+1).every(b=>a.r<=b.l||b.r<=a.l||a.b<=b.t||b.b<=a.t)));
+await p.screenshot({path:out+'/adventure-mobile.png',fullPage:true});
+await p.locator('[data-station="pipe2"]').tap();await p.waitForFunction(()=>!__game.travel.moving&&__game.adventure.nearest==='pipe2',null,{timeout:20000});const value=await p.evaluate(()=>__game.adventure.quest.pipes[2]);await p.locator('#interact').tap();check('Touch moves to trough and turns it locally',await p.evaluate(v=>__game.adventure.quest.pipes[2]===(v+1)%4,value));
+check('New solid props reject entry',await p.evaluate(()=>[[-3.85,4.5],[-3.13,4.5],[-2.41,4.5],[3.45,1.67],[1.3,4.45],[2.68,6.9]].every(([x,z])=>!__game.collision.canWalk(x,z))));
+// Fixture only for input edge cases; the separate end-to-end test earns every state by real gameplay.
+await p.evaluate(()=>{const g=__game;g.travel.cancel();g.state.phase=1;g.adventure.quest.repaired=true;g.person.position.set(1.3,g.collision.heightAt(1.3,3.4),3.4);g.scholar.reset();});await p.waitForFunction(()=>__game.adventure.nearest==='drum');
+await p.keyboard.down('KeyE');await p.waitForTimeout(480);await p.evaluate(()=>dispatchEvent(new Event('blur')));await p.keyboard.up('KeyE');check('Lost focus cancels charged drum hit',await p.evaluate(()=>__game.adventure.quest.rhythm.length===0));
+await p.locator('#about').tap();await p.keyboard.press('KeyE');check('Modal prevents mechanism input',await p.evaluate(()=>__game.adventure.quest.rhythm.length===0));await p.keyboard.press('Escape');
+const r=await p.locator('#interact').boundingBox(),x=r.x+r.width/2,y=r.y+r.height/2;const session=await p.context().newCDPSession(p);
+await session.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]});await p.waitForTimeout(560);await session.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await p.locator('#interact').tap();await p.locator('#interact').tap();check('Touch hold-short-short drum rhythm works',await p.evaluate(()=>__game.state.phase===2&&__game.adventure.quest.rhythm.join(',')==='long,short,short'));
+await p.evaluate(()=>{const g=__game;g.person.position.set(2.155,g.collision.heightAt(2.155,5.990673326),5.990673326);g.scholar.reset();});await p.waitForFunction(()=>__game.adventure.nearest==='valve');await p.locator('#interact').tap();check('Touch valve increase works',await p.evaluate(()=>__game.state.flow===30));await p.locator('#decrease').tap();check('Touch valve decrease works',await p.evaluate(()=>__game.state.flow===20));
+await p.setViewportSize({width:1440,height:1000});await p.reload();await p.waitForFunction(()=>window.__READY);await p.waitForTimeout(700);await p.screenshot({path:out+'/adventure-desktop.png'});
+check('Offline page has no external assets',await p.evaluate(()=>!performance.getEntriesByType('resource').some(r=>/^https?:/.test(r.name))));check('No browser errors',errors.length===0);
+fs.writeFileSync(out+'/qa-adventure-input-report.json',JSON.stringify({passed:true,checks,errors,scope:'Chromium touch emulation 390x844; not a physical-device performance test'},null,2));
+}finally{await b.close();}})().catch(e=>{console.error(e);process.exit(1);});
