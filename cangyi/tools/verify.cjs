@@ -32,7 +32,7 @@ const check=(n,ok,d)=>{report.checks.push({name:n,ok:!!ok,detail:d});console.log
     // 工具：走到某点（不瞬移）
     const walk=(x,z,max=12)=>p.evaluate(({x,z,max})=>{const C=__C,P=C.P;for(let i=0;i<max*60;i++){const dx=x-P.x,dz=z-P.z,d=Math.hypot(dx,dz);if(d<.15){C.step(1/60);return true;}C.step(1/60,{move:{x:dx/d,z:dz/d},draw:false});}C.step(1/60);return false;},{x,z,max});
     // 工具：把物体投到屏幕上用真实鼠标点一下
-    const clickObj=async(expr)=>{const pos=await p.evaluate(e=>{const o=eval(e);const v=new (__C.camera.position.constructor)();o.getWorldPosition(v);__C.lookAt(v.x,v.y,v.z);return __C.screenOf(o);},expr);await p.mouse.move(pos.x,pos.y);await p.mouse.click(pos.x,pos.y);await p.evaluate(()=>__C.step(.05));return pos;};
+    const clickObj=async(expr)=>{const pos=await p.evaluate(e=>{const o=eval(e);const v=new (__C.camera.position.constructor)();o.getWorldPosition(v);__C.lookAt(v.x,v.y,v.z);return __C.screenOf(o);},expr);const hit=await p.evaluate(({x,y})=>__C.pickAt(x,y),pos);if(hit?.type!=='interact')console.log('  (点击前，鼠标下是：'+JSON.stringify(hit)+'，目标：'+expr+')');await p.mouse.move(pos.x,pos.y);await p.mouse.click(pos.x,pos.y);await p.evaluate(()=>__C.step(.05));return pos;};
 
     // 行走与碰撞
     const mv=await p.evaluate(()=>{const C=__C,P=C.P,x0=P.x,z0=P.z;C.step(1,{move:{x:0,z:-1},draw:false});const moved=Math.hypot(P.x-x0,P.z-z0);C.step(4,{move:{x:-1,z:0},draw:false});return {moved:+moved.toFixed(2),x:+P.x.toFixed(2)};});
