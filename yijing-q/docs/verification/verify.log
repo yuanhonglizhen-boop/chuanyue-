@@ -1,0 +1,31 @@
+PASS server: 页面加载完成
+PASS server: 无失败请求  []
+PASS server: 无运行时错误  []
+PASS dist: 页面加载完成
+PASS dist: 无失败请求  []
+PASS 走路 1.2 秒：移动并自动蹦跳  {"hops":5,"minScaleY":0.913,"maxScaleY":1.095,"moved":5.88}
+PASS 果冻形变：落地压扁 <0.92、腾空拉长 >1.05  {"hops":5,"minScaleY":0.913,"maxScaleY":1.095,"moved":5.88}
+PASS 跳跃与二段跳（二段跳更高）  {"single":1.37,"double":2.28}
+PASS 掉进水里会回到最近站稳处  {"falls":1,"pos":[0,0,3.5]}
+PASS 第一境·前半: 全部 15 个航点到达（无瞬移、无落水）
+PASS 第一境：途中拾得东岛与浮石上的爻玉  {"gems":["bob","east"],"altars":[1,0,1]}
+PASS 第一境·爻台: 全部 4 个航点到达（无瞬移、无落水）
+PASS 第一境：三座爻台排成坎卦 [阴,阳,阴]，石桥升起  {"altars":[0,1,0],"solved":true}
+PASS 第一境·云垫与高台: 全部 6 个航点到达（无瞬移、无落水）
+PASS 第一境：拿到 3 枚以上爻玉，卦门亮起  {"gems":["bob","east","perch"],"gate":true}
+PASS 第一境·石桥: 全部 6 个航点到达（无瞬移、无落水）
+PASS 第一境：走进卦门，进入第二境  {"cleared":[true,false]}
+PASS 第二境·点燃初: 全部 7 个航点到达（无瞬移、无落水）
+PASS 第二境·点燃三: 全部 13 个航点到达（无瞬移、无落水）
+PASS 第二境·下山到二: 全部 8 个航点到达（无瞬移、无落水）
+PASS 第二境：按 E 盖灭「二」，三座火台排成离卦 [阳,阴,阳]  {"braziers":[1,0,1],"solved":true,"gems":["p1","p2","slider","p3"],"gate":true}
+PASS 第二境：拿到 3 枚以上爻玉，卦门亮起  {"braziers":[1,0,1],"solved":true,"gems":["p1","p2","slider","p3"],"gate":true}
+PASS 第二境·去卦门: 全部 12 个航点到达（无瞬移、无落水）
+PASS 第二境：走进卦门，出现结局与八卦方位图（坎、离点亮）  {"mode":"end","cleared":[true,true],"gems":"7 / 12","map":["坎","离"]}
+PASS 考据弹窗：引文均注明出处  ["离为火。","《周易·说卦传》","离也者，明也，万物皆相见，南方之卦也。","《周易·说卦传》"]
+PASS dist: 全程无运行时错误  []
+PASS 390px 手机：无横向溢出
+PASS 手机：显示摇杆与跳跃键，顶栏不折行  {"joystick":true,"jump":true,"titleOneLine":true,"gemsOneLine":true}
+PASS 手机：摇杆向上推，团子向前走  {"before":3.5,"after":-1.16}
+PASS 手机：无运行时错误  []
+ALL PASSED (30)

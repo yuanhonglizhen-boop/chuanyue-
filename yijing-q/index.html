@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#cfeee2"><title>易境 · 爻爻</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-level="kan">
+  <main id="stage" aria-label="三维游戏画面"></main>
+  <div id="loading">玉团子正在醒来…</div>
+
+  <header class="hud-top">
+    <div class="badge"><span id="level-glyph"></span><div><strong id="level-title">第一境 · 习坎</strong><small id="level-sub">水洊至，习坎</small></div></div>
+    <div class="gems" title="爻玉"><i class="gem-icon"></i><span id="gems">0 / 6</span></div>
+    <nav>
+      <button id="btn-lore" title="本境考据">卦</button>
+      <button id="btn-help" title="操作说明">?</button>
+      <button id="btn-sound" title="声音" aria-pressed="true">🔊</button>
+      <button id="btn-restart" title="重新开始本境">↺</button>
+    </nav>
+  </header>
+  <section class="objective"><span>目标</span><p id="objective"></p></section>
+  <div id="prompt" hidden><kbd>E</kbd> <span id="prompt-label"></span></div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <div id="card"><div id="card-glyph"></div><h2 id="card-title"></h2><p id="card-sub"></p></div>
+  <div id="fade"></div>
+
+  <div class="touch">
+    <div id="joystick"><div id="knob"></div></div>
+    <button id="btn-act">E</button>
+    <button id="btn-jump">跳</button>
+  </div>
+
+  <section id="title">
+    <div class="title-box">
+      <p class="eyebrow">山水 · 八卦 · 玉团子</p>
+      <h1>易境 <span>·</span> 爻爻</h1>
+      <p class="lead">一只玉做的小团子，要穿过八座卦象之境。<br>每一境，都藏着一个卦。</p>
+      <button id="btn-start" class="primary">开始闯关 <span>→</span></button>
+      <div class="chapters"><button data-chapter="0">第一境 · 坎</button><button data-chapter="1">第二境 · 离</button></div>
+      <p class="keys">WASD / 方向键 移动 · 空格 跳（空中再按一次二段跳）· E 互动 · 拖动转镜头</p>
+      <p class="keys keys-touch">左下摇杆 移动 · 「跳」按钮 跳（空中再按一次二段跳）· 「E」互动 · 右侧拖动转镜头</p>
+      <button id="btn-about" class="link">关于考据</button>
+    </div>
+  </section>
+
+  <section id="end" hidden>
+    <div class="end-box">
+      <p class="eyebrow">两境已通</p>
+      <h2>水火既见，前路犹长</h2>
+      <div id="end-map" class="bagua"></div>
+      <div class="stats"><div><b id="end-time">0:00</b><span>用时</span></div><div><b id="end-gems">0 / 12</b><span>爻玉</span></div></div>
+      <p class="note">其余六境（乾、坤、震、巽、艮、兑）尚在筹备。</p>
+      <button id="btn-again" class="primary">再玩一遍</button>
+    </div>
+  </section>
+
+  <dialog id="lore"><button class="x" data-close aria-label="关闭">×</button>
+    <h2 id="lore-title"></h2><ol id="lore-quotes" class="quotes"></ol><p id="lore-rule" class="rule"></p>
+    <button class="primary" data-close>知道了</button></dialog>
+  <dialog id="about"><button class="x" data-close aria-label="关闭">×</button><h2>关于考据</h2><div id="about-body"></div><button class="primary" data-close>好</button></dialog>
+  <dialog id="help"><button class="x" data-close aria-label="关闭">×</button><h2>怎么玩</h2>
+    <ul class="help"><li><kbd>W A S D</kbd> / 方向键：移动（走路会自己蹦蹦跳跳）</li><li><kbd>空格</kbd>：跳；空中再按一次：二段跳</li><li><kbd>E</kbd>：读石碑、点燃或盖灭火台</li><li>拖动画面 / <kbd>Q</kbd> <kbd>R</kbd>：转镜头；滚轮：远近</li><li>掉进水里会回到最近站稳的地方</li><li>每境：先解开卦象，再收集至少 3 枚爻玉，卦门就会亮起</li></ul>
+    <button class="primary" data-close>开始</button></dialog>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

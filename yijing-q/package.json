@@ -1,0 +1,16 @@
+{
+  "name": "yijing-q",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "易境 · 爻爻 —— 玉团子闯八卦（独立新版，不依赖仓库根目录的原版代码）",
+  "scripts": {
+    "start": "node server.cjs",
+    "build": "node build.cjs",
+    "verify": "node tools/verify.cjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "playwright": "1.56.1"
+  }
+}
