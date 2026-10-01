@@ -11,6 +11,11 @@ cd yijing-q
 npm install
 npm start          # http://127.0.0.1:8520
 npm run build      # 打包为单文件离线版 dist/易境-爻爻.html，双击就能玩
+```
+
+不想装任何东西：直接下载 `release/易境-爻爻.html`，双击用浏览器打开即可（Chrome / Edge / Safari）。
+
+```bash
 npm run verify     # 自动验证（需先 build）：真实走跳打通两境 + 截图
 ```
 
