@@ -168,7 +168,11 @@ function step(dt){
       if(d<.18){game.walkTo=null;}else{mx=dx/d;mz=dz/d;}}
     const l=Math.hypot(mx,mz),run=keys.has('ShiftLeft')||keys.has('ShiftRight'),sp=(run?4:2.7)*(l?1:0);
     const tvx=l?mx/l*sp:0,tvz=l?mz/l*sp:0,a=1-Math.exp(-dt*12);P.vx+=(tvx-P.vx)*a;P.vz+=(tvz-P.vz)*a;
-    const ox=P.x,oz=P.z,nx=P.x+P.vx*dt,nz=P.z+P.vz*dt;if(!W.blocked(nx,P.z))P.x=nx;else P.vx*=.2;if(!W.blocked(P.x,nz))P.z=nz;else P.vz*=.2;
+    /* 已经和某物重叠（比如铜箱刚好升在脚下）时，忽略它，让角色能走出来 */
+    const inside=W.blocked(P.x,P.z);
+    const ox=P.x,oz=P.z,nx=P.x+P.vx*dt,nz=P.z+P.vz*dt,bx=W.blocked(nx,P.z,.42,inside);if(!bx)P.x=nx;const bz=W.blocked(P.x,nz,.42,inside);if(!bz)P.z=nz;
+    /* 撞到圆柱（柱、灯、石座）时沿切线滑过去，不会卡住 */
+    const hit=bx||bz;if(hit){let ok=false;if(hit.kind==='cyl'){const dx=P.x-hit.x,dz=P.z-hit.z,l=Math.hypot(dx,dz)||1,ux=dx/l,uz=dz/l,dot=P.vx*ux+P.vz*uz;if(dot<0){const tx=P.vx-dot*ux,tz=P.vz-dot*uz,sx=P.x+tx*dt,sz=P.z+tz*dt;if(!W.blocked(sx,sz,.42,inside)){P.x=sx;P.z=sz;ok=true;}}}if(!ok){if(bx)P.vx*=.2;if(bz)P.vz*=.2;}}
     P.speed=Math.hypot(P.x-ox,P.z-oz)/dt;
     if(game.walkTo){if(P.speed<.3){game.stuck+=dt;if(game.stuck>.8){game.walkTo=null;game.pending=null;}}else game.stuck=0;}
     if(view==='first')P.yaw=cam.yaw;else if(P.speed>.2){const ty=Math.atan2(-P.vx,-P.vz);let d=ty-P.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));P.yaw+=d*Math.min(1,dt*10);}

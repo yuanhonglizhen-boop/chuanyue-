@@ -21,8 +21,8 @@ export function buildRoom2(ctx){
 
   // ---------- 八角台 ----------
   const dais=new T.Group();dais.position.set(cx,0,cz);W.root.add(dais);
-  W.mesh(new T.CylinderGeometry(3.15,3.25,.14,8),W.M.stone,0,.07,0,dais).rotation.y=Math.PI/8;
-  W.mesh(new T.TorusGeometry(3.05,.04,6,8),W.M.gold,0,.15,0,dais).rotation.set(Math.PI/2,0,Math.PI/8);
+  W.mesh(new T.CylinderGeometry(3.35,3.45,.14,8),W.M.stone,0,.07,0,dais).rotation.y=Math.PI/8;
+  W.mesh(new T.TorusGeometry(3.25,.04,6,8),W.M.gold,0,.15,0,dais).rotation.set(Math.PI/2,0,Math.PI/8);
   W.mesh(new T.TorusGeometry(1.3,.035,6,48),W.M.gold,0,.15,0,dais).rotation.x=Math.PI/2;
   // 太极（台心浮雕，装饰）
   const yin=W.mesh(new T.CircleGeometry(1.2,48,0,Math.PI),new T.MeshStandardMaterial({color:'#1a1512',roughness:.4}),0,.151,0,dais);yin.rotation.x=-Math.PI/2;
@@ -30,10 +30,10 @@ export function buildRoom2(ctx){
   // 地上刻"南""北"
   for(const [txt,z] of [['南',3.75],['北',-3.75]]){const m=W.mesh(new T.PlaneGeometry(.7,.7),new T.MeshStandardMaterial({map:glyphTex(txt,{bg:'#2b2522',fg:'#d4a64a',size:150}),roughness:.6,metalness:.3}),cx,.02,cz+z);m.rotation.x=-Math.PI/2;if(z<0)m.rotation.z=Math.PI;}
 
-  const slots=DIRS.map((dir,k)=>{const a=k*Math.PI/4,x=Math.sin(a)*2.55,z=Math.cos(a)*2.55;
+  const slots=DIRS.map((dir,k)=>{const a=k*Math.PI/4,x=Math.sin(a)*2.75,z=Math.cos(a)*2.75;/* 石座之间留出宽松的通道 */
     const g=new T.Group();g.position.set(cx+x,0,cz+z);g.rotation.y=a;W.root.add(g);// 面朝外
-    W.mesh(new T.CylinderGeometry(.34,.4,.72,8),W.M.darkWood,0,.36,0,g);W.mesh(new T.CylinderGeometry(.42,.42,.05,8),W.M.gold,0,.74,0,g);
-    W.addCyl(cx+x,cz+z,.42,'pedestal');
+    W.mesh(new T.CylinderGeometry(.3,.36,.72,8),W.M.darkWood,0,.36,0,g);W.mesh(new T.CylinderGeometry(.38,.38,.05,8),W.M.gold,0,.74,0,g);
+    W.addCyl(cx+x,cz+z,.34,'pedestal');
     return {k,dir,group:g,x:cx+x,z:cz+z,angle:a};});
   // 卦牌：初始打乱
   let order=['坎','震','乾','巽','离','坤','兑','艮'];
@@ -42,7 +42,7 @@ export function buildRoom2(ctx){
     W.mesh(new T.BoxGeometry(.62,.76,.04),W.M.gold,0,0,-.03,g);
     const glow=W.mesh(new T.PlaneGeometry(.78,.92),new T.MeshBasicMaterial({color:'#ffd27a',transparent:true,opacity:0,depthWrite:false}),0,0,-.06,g);
     const tile={name,group:g,glow,slot:i,cur:new T.Vector3()};place(tile,true);
-    W.interact(g,{label:'卦牌 · '+name,range:2.8,enabled:()=>!ctx.flag('octagon'),onClick:()=>pick(tile)});return tile;});
+    W.interact(g,{label:'卦牌 · '+name,range:3.3,enabled:()=>!ctx.flag('octagon'),onClick:()=>pick(tile)});return tile;});
   function place(tile,instant){const s=slots[tile.slot];tile.target=new T.Vector3(s.x,1.15,s.z);tile.rot=s.angle;if(instant){tile.group.position.copy(tile.target);tile.cur.copy(tile.target);}tile.group.rotation.y=s.angle;}
   let selected=null;
   function pick(tile){sfx.click();if(!selected){selected=tile;tile.glow.material.opacity=.55;return;}
@@ -68,7 +68,7 @@ export function buildRoom2(ctx){
   W.mesh(new T.BoxGeometry(.94,.04,.64),W.M.gold,0,.02,.3,lid);
   const lockFace=W.mesh(new T.PlaneGeometry(.4,.2),new T.MeshStandardMaterial({map:glyphTex('锁',{bg:'#3a2a14',fg:'#e8c26a',size:120}),roughness:.4}),0,.3,.305,chest);
   let chestCol=null,chestT=0,lidT=0,chestOpen=false;
-  W.interact(chest,{label:'铜箱（转盘锁）',range:2.6,enabled:()=>ctx.flag('octagon')&&!chestOpen,onClick:async()=>{
+  W.interact(chest,{label:'铜箱（转盘锁）',range:3.6,enabled:()=>ctx.flag('octagon')&&!chestOpen,onClick:async()=>{
     const ok=await ctx.openLock({title:'铜箱',riddle:'以先天之数，记 雷、风、水、火。',digits:4,answer:'4563'});
     if(ok)openChest();}});
   function openChest(){if(chestOpen)return;chestOpen=true;ctx.setFlag('chest');ctx.milestone(4);sfx.solve();ctx.inv.add('key2');ctx.inv.add('compass');ctx.toast('铜箱开了：得到后门钥匙、罗盘。罗盘会显示在屏幕上方。');}
@@ -86,7 +86,7 @@ export function buildRoom2(ctx){
   });
   function restore(f){if(f.octagon){tiles.forEach(tl=>{tl.slot=ANSWER.indexOf(tl.name);place(tl,true);});chestT=1;chest.position.y=.16;chestCol=W.addBox(cx,cz,.5,.35,'chest');}
     if(f.chest){chestOpen=true;lidT=1;lid.rotation.x=-1.6;}if(f.door2){door.openDoor();door.t=1;}}
-  return {id:'r2',name:'先天室',theme:'xian',bounds:{x0:-5.5,x1:5.5,z0:cz-5.5,z1:cz+5.5},tiles,slots,chest,door,restore,answer:ANSWER,
+  return {id:'r2',name:'先天室',theme:'xian',scroll:sw.group,stele,bounds:{x0:-5.5,x1:5.5,z0:cz-5.5,z1:cz+5.5},tiles,slots,chest,door,restore,answer:ANSWER,
     hint:f=>!f.octagon?'octagon':!f.chest?'chest':!f.door2?'door2':null};
 }
 

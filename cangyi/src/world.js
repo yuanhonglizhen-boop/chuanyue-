@@ -22,7 +22,7 @@ export function createWorld(scene){
   function addBox(x,z,hw,hd,tag){const c={kind:'box',x,z,hw,hd,tag};colliders.push(c);return c;}
   function addCyl(x,z,r,tag){const c={kind:'cyl',x,z,r,tag};colliders.push(c);return c;}
   function removeCollider(c){const i=colliders.indexOf(c);if(i>=0)colliders.splice(i,1);}
-  function blocked(x,z,r=.42){for(const c of colliders){if(c.off)continue;if(c.kind==='cyl'){if(Math.hypot(x-c.x,z-c.z)<c.r+r)return c;}else if(Math.abs(x-c.x)<c.hw+r&&Math.abs(z-c.z)<c.hd+r)return c;}return null;}
+  function blocked(x,z,r=.42,ignore=null){for(const c of colliders){if(c.off||c===ignore)continue;if(c.kind==='cyl'){if(Math.hypot(x-c.x,z-c.z)<c.r+r)return c;}else if(Math.abs(x-c.x)<c.hw+r&&Math.abs(z-c.z)<c.hd+r)return c;}return null;}
 
   // ---------- 可交互 ----------
   // opts: {label, range, onClick, enabled}

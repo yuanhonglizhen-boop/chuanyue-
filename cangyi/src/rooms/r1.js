@@ -73,6 +73,6 @@ export function buildRoom1(ctx){
   // 读档恢复
   function restore(f){for(const d of drawers)if(f['drawer-'+d.name]){TARGET[d.name].forEach((v,i)=>d.state[i]=v);d.bars.forEach(b=>b.show());d.open=true;d.t=1;d.group.position.z=.78;}
     if(f.drawers&&!f.key1)showKey();if(f.door1){door.openDoor();door.t=1;}}
-  return {id:'r1',name:'门厅 · 卦画',theme:'hall',bounds:{x0:-5.5,x1:5.5,z0:-5.5,z1:5.5},spawn:{x:0,z:3.4,yaw:0},drawers,door,key,restore,
+  return {id:'r1',name:'门厅 · 卦画',theme:'hall',scroll:sc.group,bounds:{x0:-5.5,x1:5.5,z0:-5.5,z1:5.5},spawn:{x:0,z:3.4,yaw:0},drawers,door,key,restore,
     hint:f=>!f.drawers?'drawers':!f.door1?'door1':null};
 }
