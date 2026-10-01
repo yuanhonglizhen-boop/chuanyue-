@@ -1,0 +1,16 @@
+{
+  "name": "cangyi",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "藏易阁 —— 周易主题 3D 密室逃脱（独立项目，不依赖仓库里的其他游戏）",
+  "scripts": {
+    "start": "node server.cjs",
+    "build": "node build.cjs",
+    "verify": "node tools/verify.cjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "playwright": "1.56.1"
+  }
+}

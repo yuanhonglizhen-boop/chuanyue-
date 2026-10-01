@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b0705"><title>藏易阁</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="stage" aria-label="三维场景"></main>
+  <div id="loading">掌灯中…</div>
+  <div id="tip" hidden></div>
+  <div id="crosshair" hidden></div>
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <div id="hud" hidden>
+    <div id="compass" hidden title="罗盘"><div id="compass-dial"><b class="n">北</b><b class="e">东</b><b class="s">南</b><b class="w">西</b><i></i></div></div>
+    <nav class="tools">
+      <button id="btn-home" title="回到开始页面">归</button>
+      <button id="btn-view" title="切换视角（V）">第三人称</button>
+      <button id="btn-notes" title="易笔记（N）">笔记</button>
+      <button id="btn-hint" title="问书灵（H）">书灵</button>
+      <button id="btn-settings" title="设置">设</button>
+      <button id="btn-music" title="音乐">乐</button>
+      <button id="btn-sound" title="音效">声</button>
+    </nav>
+    <div id="inv" aria-label="行囊"></div>
+  </div>
+
+  <section id="title">
+    <div class="title-box">
+      <div class="seal">藏易</div>
+      <h1>藏易阁</h1>
+      <p class="sub">以《易》为锁，以知为钥</p>
+      <p class="lead">你醒在一座古老的藏书阁里，四门紧闭。<br>阁主把每一道门，都锁进了一段易理。</p>
+      <div class="pick"><span>灵龟之色</span><div id="swatches"></div></div>
+      <div class="pick"><span>视角</span><div class="views"><button data-view="third">第三人称</button><button data-view="first">第一人称</button></div><small>玩的时候随时按 V 切换；第一人称觉得晕，就切回第三人称。</small></div>
+      <div class="actions"><button id="btn-continue" class="primary" hidden>继续</button><button id="btn-begin" class="primary">开始</button></div>
+      <p class="keys">WASD 行走 · Shift 快走 · 拖动看四周 · 点击物品互动（远处的会自动走过去）· E 互动 · V 视角 · N 笔记 · H 书灵</p>
+      <p class="ver">第一卷 · 三室：门厅 · 先天 · 后天</p>
+    </div>
+  </section>
+
+  <dialog id="read" class="paper"><button class="x" data-close aria-label="关闭">×</button><h2 id="read-title"></h2><div id="read-body"></div><p id="read-src" class="src"></p><button class="primary" data-close>收起</button></dialog>
+  <dialog id="notes" class="paper"><button class="x" data-close aria-label="关闭">×</button><h2>易笔记</h2><div id="notes-list"></div></dialog>
+  <dialog id="hint" class="paper"><button class="x" data-close aria-label="关闭">×</button><h2>书灵 <small id="hint-level"></small></h2><div id="hint-text"></div><div class="row"><button id="hint-more" class="ghost">再多说一点</button><button class="primary" data-close>明白了</button></div></dialog>
+  <dialog id="lock" class="paper"><button class="x" data-close aria-label="关闭">×</button><h2 id="lock-title"></h2><p id="lock-riddle" class="riddle"></p><div id="lock-wheels"></div><p id="lock-msg" class="src"></p><button id="lock-try" class="primary">转动锁扣</button></dialog>
+  <dialog id="settings" class="paper"><button class="x" data-close aria-label="关闭">×</button><h2>设置</h2>
+    <label>视野宽度 <input id="fov" type="range" min="50" max="90" step="1"></label>
+    <label>转动灵敏度 <input id="sens" type="range" min=".4" max="2" step=".1"></label>
+    <p class="src">觉得晕：用第三人称、把视野调宽一点、灵敏度调低一点。</p>
+    <div class="row"><button id="btn-reset" class="ghost">清除存档</button><button class="primary" data-close>好</button></div></dialog>
+  <dialog id="ending" class="paper"><h2>第一卷 · 终</h2><p class="lead">八灯次第而明，北门洞开。门后长廊尚未修成——<br>爻位室、变化室、图书室、大衍室，待续。</p>
+    <div class="stats"><div><b id="end-time"></b><span>用时</span></div><div><b id="end-hints"></b><span>问书灵</span></div></div>
+    <h3>这一卷读到的</h3><ol id="end-notes"></ol><button class="primary" data-close>再四处看看</button></dialog>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
