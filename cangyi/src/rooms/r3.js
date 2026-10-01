@@ -54,6 +54,6 @@ export function buildRoom3(ctx){
   W.lantern(cx,2.6,cz-7.2,{intensity:2.5,distance:4});
 
   function restore(f){if(f.lamps){lamps.forEach(l=>{l.lit=true;l.glow=1;});step=8;door.openDoor();door.t=1;}}
-  return {id:'r3',name:'后天室',theme:'hou',scrolls:[north.group,east.group,west.group],bounds:{x0:-5.5,x1:5.5,z0:cz-5.5,z1:cz+5.5},lamps,door,restore,order:ORDER,gua:GUA,endZ:cz-7.6,
+  return {id:'r3',name:'后天室',theme:'hou',scrolls:[north.group,east.group,west.group],bounds:{x0:-5.5,x1:5.5,z0:cz-5.5,z1:cz+5.5},lamps,door,restore,order:ORDER,gua:GUA,endZ:cz-6.9,
     hint:f=>!f.lamps?'lamps':null};
 }
