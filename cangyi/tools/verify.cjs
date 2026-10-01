@@ -38,6 +38,7 @@ const check=(n,ok,d)=>{report.checks.push({name:n,ok:!!ok,detail:d});console.log
         pos=await p.evaluate(e=>{const C=__C,o=eval(e),v=new (C.camera.position.constructor)();o.getWorldPosition(v);const dx=C.P.x-v.x,dz=C.P.z-v.z,l=Math.hypot(dx,dz)||1;for(let i=0;i<24;i++)C.step(1/60,{move:{x:dx/l,z:dz/l},draw:false});C.lookAt(v.x,v.y,v.z);return C.screenOf(o);},expr);
         hit=await p.evaluate(({x,y})=>__C.pickAt(x,y),pos);}await p.mouse.move(pos.x,pos.y);await p.mouse.click(pos.x,pos.y);await p.evaluate(()=>__C.step(.05));return pos;};
 
+    const closeDlg=id=>p.evaluate(id=>{const d=document.getElementById(id);if(d.open)d.close();},id);
     // 行走与碰撞
     const mv=await p.evaluate(()=>{const C=__C,P=C.P,x0=P.x,z0=P.z;C.step(1,{move:{x:0,z:-1},draw:false});const moved=Math.hypot(P.x-x0,P.z-z0);C.step(4,{move:{x:-1,z:0},draw:false});return {moved:+moved.toFixed(2),x:+P.x.toFixed(2)};});
     check('WASD 行走；撞墙停下不穿墙',mv.moved>2&&mv.x>-5.2,mv);
@@ -54,12 +55,12 @@ const check=(n,ok,d)=>{report.checks.push({name:n,ok:!!ok,detail:d});console.log
     await p.mouse.click(readFar.x,readFar.y);
     await p.evaluate(()=>{for(let i=0;i<300&&!document.getElementById('read').open;i++)__C.step(1/60,{draw:false});});
     check('点击远处的手札：自动走过去并打开阅读',await p.evaluate(()=>document.getElementById('read').open&&__C.save.notes.includes('guahua')),{startDist:+readFar.dist.toFixed(2)});
-    await shot(p,'04-read');await p.click('#read .primary');
+    await shot(p,'04-read');await closeDlg('read');
     // 读挂轴（八卦取象歌）
-    await walk(-3.6,-.4);await clickObj('__C.rooms[0].scroll');
+    await walk(-4.2,2.8);await walk(-4.2,-.4);await clickObj('__C.rooms[0].scroll');
     const song=await p.evaluate(()=>({open:document.getElementById('read').open,text:document.getElementById('read-body').innerText,src:document.getElementById('read-src').innerText}));
     check('读挂轴：八卦取象歌，注明出处',song.open&&/震仰盂/.test(song.text)&&/周易本义/.test(song.src),song.src);
-    await p.click('#read .primary');
+    await closeDlg('read');
     // 问书灵：分级提示
     await p.keyboard.press('KeyH');const h1=await p.evaluate(()=>document.getElementById('hint-text').innerText);await p.click('#hint-more');const h2=await p.evaluate(()=>document.getElementById('hint-text').innerText);
     check('书灵分级提示（先点拨，再给方法）',/口诀/.test(h1)&&h2.length>h1.length,{h1:h1.slice(0,30)});await shot(p,'05-hint');await p.click('#hint .primary');
@@ -78,8 +79,8 @@ const check=(n,ok,d)=>{report.checks.push({name:n,ok:!!ok,detail:d});console.log
     // ---------- 第二间 ----------
     await walk(0,-6.2);await walk(0,-9.2);await p.evaluate(()=>__C.step(.5));await shot(p,'08-xiantian');
     check('进入先天室，音乐换成羽调主题',await p.evaluate(()=>__C.currentRoom()==='r2'));
-    await walk(-4,-9.2);await walk(-4,-12.5);await clickObj('__C.rooms[1].scroll');const td=await p.evaluate(()=>document.getElementById('read-src').innerText);check('读挂轴：天地定位（《说卦传》）',/说卦传/.test(td),td);await p.click('#read .primary');
-    await walk(-4,-9.2);await walk(4,-9.2);await walk(4,-12.5);await clickObj('__C.rooms[1].stele');const xo=await p.evaluate(()=>document.getElementById('read-body').innerText);check('读石碑：先天次序（注明宋人之说）',/乾一/.test(xo)&&await p.evaluate(()=>/宋人/.test(document.getElementById('read-src').innerText)));await p.click('#read .primary');
+    await walk(-4,-9.2);await walk(-4,-12.5);await clickObj('__C.rooms[1].scroll');const td=await p.evaluate(()=>document.getElementById('read-src').innerText);check('读挂轴：天地定位（《说卦传》）',/说卦传/.test(td),td);await closeDlg('read');
+    await walk(-4,-9.2);await walk(4,-9.2);await walk(4,-12.5);await clickObj('__C.rooms[1].stele');const xo=await p.evaluate(()=>document.getElementById('read-body').innerText);check('读石碑：先天次序（注明宋人之说）',/乾一/.test(xo)&&await p.evaluate(()=>/宋人/.test(document.getElementById('read-src').innerText)));await closeDlg('read');
     // 八角台：站在台心，第一人称，逐一点击交换
     await walk(4,-9.2);await walk(1.05,-9.6);await walk(0,-12.5);await p.evaluate(()=>__C.setView('first'));
     const ANSWER=await p.evaluate(()=>__C.rooms[1].answer);let swaps=0;
@@ -99,8 +100,8 @@ const check=(n,ok,d)=>{report.checks.push({name:n,ok:!!ok,detail:d});console.log
     check('先天室北门打开',await p.evaluate(()=>__C.save.flags.door2&&__C.save.milestone===5));
 
     // ---------- 第三间 ----------
-    await walk(0,-18.8);await walk(0,-21.5);await p.evaluate(()=>__C.step(.4));await shot(p,'11-houtian');
-    await walk(0,-25);await p.evaluate(()=>__C.setView('first'));
+    await walk(0,-18.8);await walk(0,-20.3);await p.evaluate(()=>__C.step(.4));await shot(p,'11-houtian');
+    await walk(1.2,-21);await walk(1.2,-24);await walk(0,-25);await p.evaluate(()=>__C.setView('first'));
     // 先点错（北灯），应全灭
     await clickObj('__C.rooms[2].lamps[4].group');await p.evaluate(()=>__C.step(.6));const bad=await p.evaluate(()=>__C.rooms[2].lamps.every(l=>!l.lit));
     const ORDER=await p.evaluate(()=>__C.rooms[2].order);for(const k of ORDER){await clickObj(`__C.rooms[2].lamps[${k}].group`);await p.evaluate(()=>__C.step(.15));}
