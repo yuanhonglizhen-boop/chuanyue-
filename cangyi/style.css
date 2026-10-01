@@ -61,3 +61,16 @@ label{display:flex;justify-content:space-between;align-items:center;gap:14px;mar
 #end-notes{line-height:1.9}#end-notes small{display:block;font-size:12px;color:#7a5a30}
 dialog h3{font-size:16px;letter-spacing:.2em;color:#5a1712;margin:14px 0 6px}
 @media (max-width:820px){#title{place-items:end center;padding:16px;background:linear-gradient(transparent 25%,rgba(8,5,3,.92) 58%)}.title-box{max-height:68vh;overflow:auto}h1{font-size:48px}.tools button{min-width:36px;height:34px;font-size:13px;padding:0 6px}}
+/* 水墨画风：界面也换成宣纸墨字 */
+body[data-style="ink"]{--ink:#24201c;--gold:#3a332c;--gold2:#9a9080;--glass:rgba(242,237,226,.86);color:var(--ink)}
+body[data-style="ink"] .tools button,body[data-style="ink"] #inv,body[data-style="ink"] #toast,body[data-style="ink"] #tip{box-shadow:0 2px 10px rgba(60,50,40,.18)}
+body[data-style="ink"] .tools button:hover{color:#000;border-color:#24201c}
+body[data-style="ink"] #inv i{background:#f6f1e6;color:#a8322a;border-color:#a8322a}
+body[data-style="ink"] #compass{background:radial-gradient(circle,#f6f1e6 0 55%,#e4dccb 56%)}
+body[data-style="ink"] #compass-dial .n{color:#a8322a}
+body[data-style="ink"] h1{text-shadow:none}
+body[data-style="ink"] .primary{background:#a8322a;border-color:#7a231d;color:#fbf4e6;box-shadow:0 3px 12px rgba(60,40,30,.25)}
+body[data-style="ink"] #title{background:linear-gradient(90deg,rgba(242,237,226,.95) 0,rgba(242,237,226,.75) 38%,transparent 62%)}
+@media (max-width:820px){body[data-style="ink"] #title{background:linear-gradient(transparent 25%,rgba(242,237,226,.95) 58%)}}
+body[data-style="ink"] #swatches button,body[data-style="ink"] .views button{background:rgba(255,252,245,.6);border-color:#b8ad9a}
+body[data-style="ink"] #swatches button[aria-pressed="true"],body[data-style="ink"] .views button[aria-pressed="true"]{background:rgba(60,50,40,.1);border-color:#24201c;color:#000}

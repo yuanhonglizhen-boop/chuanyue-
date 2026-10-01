@@ -16,6 +16,9 @@ export function createWorld(scene){
     paper:new THREE.MeshStandardMaterial({color:'#efe1bd',roughness:.9}),
     silk:new THREE.MeshStandardMaterial({color:'#a3241b',roughness:.6,emissive:'#5a0d07',emissiveIntensity:.25,side:THREE.DoubleSide}),
   };
+  /* 水墨模式下各材质的墨色：漆→浓墨，深木→重墨，木/金/铜→淡赭，石→淡墨 */
+  const INK={lacquer:{tone:.34,tint:'grey'},darkWood:{tone:.6,tint:'grey'},wood:{tone:.8,tint:'ochre'},gold:{tone:.86,tint:'ochre'},bronze:{tone:.66,tint:'ochre'},jade:{tone:.85,tint:'grey'},stone:{tone:.78,tint:'grey'},paper:{tone:.97,tint:'grey'},silk:{tone:.6,tint:'ochre'}};
+  for(const k in INK)M[k].userData.ink=INK[k];
   const mesh=(geo,mat,x=0,y=0,z=0,parent=root)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);parent.add(m);return m;};
 
   // ---------- 碰撞（俯视二维） ----------
@@ -52,8 +55,11 @@ export function createWorld(scene){
         const wx=Math.cos(rot)*m,wz=-Math.sin(rot)*m;const along=Math.abs(Math.sin(rot))<.5;
         addBox(cx+x+wx,cz+z+wz,along?L/2:.15,along?.15:L/2,'wall');
       }
-      // 墙背面（深色），防止从外面看穿
-      const back=mesh(new THREE.PlaneGeometry(len,h),new THREE.MeshBasicMaterial({color:'#120a07',side:THREE.BackSide}),0,h/2,-.01,wall);
+      // 门洞上方补一段墙（门框只到 3 米左右）
+      for(const [a,b] of gaps){const top=2.95;mesh(new THREE.BoxGeometry(b-a,h-top,.12),M.lacquer,(a+b)/2,top+(h-top)/2,.06,wall);
+        const fr=mesh(new THREE.PlaneGeometry(b-a,.5),frieze.clone(),(a+b)/2,h-.25,.125,wall);fr.material.map=huiwenTex().clone();fr.material.map.needsUpdate=true;fr.material.map.repeat.set(Math.max(1,Math.round((b-a)/1.2)),1);}
+      // 墙背面（深色），防止从外面看穿。按段铺，门洞处留空——否则从走廊望进门里是一片黑
+      for(const [a,b] of segs)mesh(new THREE.PlaneGeometry(b-a,h),new THREE.MeshBasicMaterial({color:'#120a07',side:THREE.BackSide}),(a+b)/2,h/2,-.01,wall);
     }
     // 四角朱漆柱（金柱础、金箍）
     for(const [x,z] of [[-w/2+.35,-d/2+.35],[w/2-.35,-d/2+.35],[-w/2+.35,d/2-.35],[w/2-.35,d/2-.35]]){column(cx+x,cz+z,h);}

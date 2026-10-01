@@ -6,10 +6,11 @@ import {buildRoom2} from './rooms/r2.js';
 import {buildRoom3} from './rooms/r3.js';
 import {NOTES,HINTS} from './lore.js';
 import {createAudio} from './audio.js';
+import {createInk,inkify} from './ink.js';
 
 const $=id=>document.getElementById(id);
 const SAVE_KEY='cangyi-save-v1';
-const DEFAULTS={flags:{},inv:[],notes:[],milestone:0,palette:'qingyu',view:'third',fov:62,sens:1,music:true,sfx:true,hintLv:{},hintsUsed:0,time:0,pos:null,started:false};
+const DEFAULTS={style:'ink',flags:{},inv:[],notes:[],milestone:0,palette:'qingyu',view:'third',fov:62,sens:1,music:true,sfx:true,hintLv:{},hintsUsed:0,time:0,pos:null,started:false};
 function loadSave(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'{}');return {...structuredClone(DEFAULTS),...s};}catch{return structuredClone(DEFAULTS);}}
 let save=loadSave();
 function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save));}catch{}}
@@ -20,6 +21,19 @@ const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;renderer.outputColorSpace=THREE.SRGBColorSpace;
 $('stage').append(renderer.domElement);
 const scene=new THREE.Scene();scene.background=new THREE.Color('#0b0705');scene.fog=new THREE.Fog('#0b0705',16,42);
+/* 画风：ink = 水墨（后期处理），lacquer = 原先的漆金 */
+const ink=createInk(renderer);
+const hemiL=new THREE.HemisphereLight('#ffffff','#d8d0c0',0),ambL=new THREE.AmbientLight('#ffffff',0);scene.add(hemiL,ambL);
+let pointLights=[];
+const inkSun=new THREE.DirectionalLight('#ffffff',0);inkSun.position.set(-4,9,6);scene.add(inkSun);
+function applyStyle(){const isInk=save.style==='ink';turtle.root.traverse(o=>o.userData.noInk=true);/* 灵龟保留所选颜色 */inkify(scene,isInk);
+  if(isInk){scene.background=new THREE.Color('#f2ece0');scene.fog=new THREE.Fog('#f2ece0',10,30);renderer.toneMapping=THREE.NoToneMapping;hemiL.intensity=1.3;ambL.intensity=.8;}
+  else{scene.background=new THREE.Color('#0b0705');scene.fog=new THREE.Fog('#0b0705',16,42);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;hemiL.intensity=0;ambL.intensity=0;}
+  /* 水墨下灯光改成白光、减弱：暖光会被误认作朱砂红，满屋泛红 */
+  scene.traverse(o=>{if(!o.isPointLight||o.parent===null)return;o.userData.base??=o.intensity;o.userData.col??=o.color.clone();
+    if(isInk)o.color.set('#ffffff');else o.color.copy(o.userData.col);});
+  pointLights=[];scene.traverse(o=>{if(o.isPointLight)pointLights.push(o);});
+  inkSun.intensity=isInk?1.1:0;document.body.dataset.style=save.style;}
 const camera=new THREE.PerspectiveCamera(save.fov,1,.05,120);
 scene.add(new THREE.HemisphereLight('#ffdcb0','#2a160e',.5));scene.add(new THREE.AmbientLight('#ffe8c8',.12));
 // 环境反射：一圈暖光，让金器、漆面有光泽
@@ -202,16 +216,16 @@ function render(dt){
       camera.position.set(cam.focus.x+dirx*d,Math.min(4.2,cam.focus.y+diry*d),cam.focus.z+dirz*d);camera.lookAt(cam.focus);}}
   if(!$('compass').hidden)$('compass-dial').style.transform='rotate('+(cam.yaw*180/Math.PI)+'deg)';
   if(performance.now()>game.toastUntil)$('toast').classList.remove('show');
-  renderer.render(scene,camera);
+  if(save.style==='ink'){/* 灯的亮度每帧由动画写入，这里渲染时临时减弱再还原 */const keep=pointLights.map(l=>l.intensity);pointLights.forEach(l=>l.intensity*=.35);ink.render(scene,camera,game.time);pointLights.forEach((l,i)=>l.intensity=keep[i]);}else renderer.render(scene,camera);
 }
 function resize(){const r=stage.getBoundingClientRect();renderer.setSize(r.width,r.height,false);camera.aspect=r.width/Math.max(1,r.height);camera.updateProjectionMatrix();}
 addEventListener('resize',resize);
 function frame(){requestAnimationFrame(frame);const dt=Math.min(clock.getDelta(),.1);acc+=dt;let n=0;while(acc>=FIXED&&n<8){step(FIXED);acc-=FIXED;n++;}if(n===8)acc=0;render(dt);}
-resize();syncAudio();renderInv();showTitle();frame();$('loading').hidden=true;
+applyStyle();resize();syncAudio();renderInv();showTitle();frame();$('loading').hidden=true;
 addEventListener('pointerdown',()=>sfx.unlock(),{once:true});addEventListener('keydown',()=>sfx.unlock(),{once:true});
 
 // 测试接口：固定步长推进；把世界坐标投到屏幕上，供测试用真实鼠标去点
-window.__C={get save(){return save;},get P(){return P;},get game(){return game;},rooms,camera,cam,sfx,turtle,start:startGame,setView,toggleView,openHint,currentRoom:()=>currentRoom().id,
+window.__C={scene,THREE,get save(){return save;},get P(){return P;},get game(){return game;},rooms,camera,cam,sfx,turtle,start:startGame,setView,setStyle:(v)=>{save.style=v;persist();applyStyle();render(1/60);},toggleView,openHint,currentRoom:()=>currentRoom().id,
   step(sec,{move=null,draw=true}={}){testMove=move;for(let t=0;t<sec-1e-9;t+=FIXED)step(FIXED);testMove=null;if(draw)render(1/60);},
   screenOf(obj){const v=new THREE.Vector3();obj.getWorldPosition(v);v.project(camera);const r=stage.getBoundingClientRect();return {x:r.left+(v.x*.5+.5)*r.width,y:r.top+(-v.y*.5+.5)*r.height,inView:v.z<1&&Math.abs(v.x)<1&&Math.abs(v.y)<1};},
   lookAt(x,y,z){const dx=x-P.x,dz=z-P.z;cam.yaw=cam.tYaw=Math.atan2(dx,dz)+Math.PI;cam.pitch=cam.tPitch;cam.focus.set(P.x,1,P.z);if(view==='first'){const d=Math.hypot(dx,dz);cam.fpPitch=Math.atan2(turtle.eyeHeight-y,d);}render(1/60);},/* 测试用：镜头立即到位，不做缓动 */

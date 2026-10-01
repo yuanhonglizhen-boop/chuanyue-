@@ -2,10 +2,10 @@ import * as THREE from '../vendor/three.module.js';
 
 // 程序生成贴图：漆木、青石地砖、回纹、绢本书法、格窗。全部离线，不依赖外部图片。
 const cache=new Map();
-function canvas(w,h,draw,{repeat=[1,1],srgb=true,key}={}){
+function canvas(w,h,draw,{repeat=[1,1],srgb=true,key,text=false}={}){
   if(key&&cache.has(key))return cache.get(key);
   const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');draw(g,w,h);
-  const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(...repeat);t.anisotropy=8;if(srgb)t.colorSpace=THREE.SRGBColorSpace;
+  const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(...repeat);t.anisotropy=8;if(srgb)t.colorSpace=THREE.SRGBColorSpace;t.userData.text=text;
   if(key)cache.set(key,t);return t;
 }
 function rand(seed){let s=seed>>>0;return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};}
@@ -51,14 +51,14 @@ export function scrollTex(columns,{title,width=512,height=1024,paper='#efe1bd',i
   g.fillStyle=ink;g.font=`${fs}px ${SERIF}`;g.textAlign='center';g.textBaseline='top';
   columns.forEach((col,i)=>{const x=w-40-colW*(i+.5);[...col].forEach((ch,k)=>{g.fillText(ch,x,60+k*fs*1.05);});});
   if(seal){g.fillStyle='#b3261e';g.fillRect(40,h-110,58,58);g.fillStyle='#f6e2c0';g.font=`bold 22px ${SERIF}`;g.textAlign='center';g.textBaseline='middle';g.fillText('藏易',69,h-81);}
-},{key:'scroll'+columns.join('|')+width+height});}
+},{key:'scroll'+columns.join('|')+width+height,text:true});}
 // 匾额：金字黑底
 export function plaqueTex(text,{w=1024,h=256,bg='#16110e',fg='#e2b65a',size=150}={}){return canvas(w,h,(g)=>{g.fillStyle=bg;g.fillRect(0,0,w,h);g.strokeStyle=fg;g.lineWidth=10;g.strokeRect(12,12,w-24,h-24);g.lineWidth=3;g.strokeRect(30,30,w-60,h-60);
-  g.fillStyle=fg;g.font=`bold ${size}px ${SERIF}`;g.textAlign='center';g.textBaseline='middle';g.shadowColor='rgba(255,210,120,.35)';g.shadowBlur=12;g.fillText(text,w/2,h/2+6);},{key:'plaque'+text+w+h+bg+fg});}
+  g.fillStyle=fg;g.font=`bold ${size}px ${SERIF}`;g.textAlign='center';g.textBaseline='middle';g.shadowColor='rgba(255,210,120,.35)';g.shadowBlur=12;g.fillText(text,w/2,h/2+6);},{key:'plaque'+text+w+h+bg+fg,text:true});}
 // 单字牌（卦名等）
 export function glyphTex(text,{bg='#1a1410',fg='#e8c26a',size=150,ring=true}={}){return canvas(256,256,(g)=>{g.fillStyle=bg;g.fillRect(0,0,256,256);if(ring){g.strokeStyle=fg;g.lineWidth=8;g.strokeRect(10,10,236,236);}
-  g.fillStyle=fg;g.font=`bold ${size}px ${SERIF}`;g.textAlign='center';g.textBaseline='middle';g.fillText(text,128,136);},{key:'glyph'+text+bg+fg+size});}
+  g.fillStyle=fg;g.font=`bold ${size}px ${SERIF}`;g.textAlign='center';g.textBaseline='middle';g.fillText(text,128,136);},{key:'glyph'+text+bg+fg+size,text:true});}
 // 卦画牌：三条爻（自下而上），可带卦名
 export function trigramTex(lines,{name='',bg='#1a1410',fg='#e8c26a'}={}){return canvas(256,320,(g,w,h)=>{g.fillStyle=bg;g.fillRect(0,0,w,h);g.strokeStyle=fg;g.lineWidth=6;g.strokeRect(8,8,w-16,h-16);
   g.fillStyle=fg;lines.forEach((y,i)=>{const yy=180-i*54;if(y)g.fillRect(48,yy,160,26);else{g.fillRect(48,yy,68,26);g.fillRect(140,yy,68,26);}});
-  if(name){g.font=`bold 64px ${SERIF}`;g.textAlign='center';g.textBaseline='middle';g.fillText(name,w/2,262);}},{key:'tri'+lines.join('')+name+bg+fg});}
+  if(name){g.font=`bold 64px ${SERIF}`;g.textAlign='center';g.textBaseline='middle';g.fillText(name,w/2,262);}},{key:'tri'+lines.join('')+name+bg+fg,text:true});}
