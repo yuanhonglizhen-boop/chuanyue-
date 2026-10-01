@@ -1,0 +1,2 @@
+{"suite":"qa-adventure (desktop 1280x900)","station":"pipe0","arrived":true,"seconds":101.5,"testTimeoutSeconds":30,"frames":94,"msPerFrame":1079}
+{"suite":"qa-adventure-input (mobile 390x844)","station":"pipe2","arrived":true,"seconds":35.4,"testTimeoutSeconds":20,"frames":52,"msPerFrame":681}

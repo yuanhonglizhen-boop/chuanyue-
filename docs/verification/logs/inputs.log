@@ -1,0 +1,10 @@
+PASS 390px layout has no horizontal overflow
+PASS Mobile pipe targets do not overlap
+page.waitForFunction: Timeout 20000ms exceeded.
+    at /home/user/chuanyue-/qa-adventure-input.cjs:9:57 {
+  name: 'TimeoutError'
+}
+
+real	1m8.494s
+user	0m0.864s
+sys	0m0.170s

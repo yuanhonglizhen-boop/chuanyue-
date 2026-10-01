@@ -8,6 +8,7 @@
     "start": "node server.cjs",
     "build": "node build.cjs",
     "vendor:three": "node tools/vendor-three.cjs",
+    "verify:cloud": "node tools/verify-cloud.cjs",
     "test:gait": "node qa-gait.cjs",
     "test:gait-visual": "node qa-gait-visual.cjs",
     "test:controls": "node qa-v7.cjs --controls",

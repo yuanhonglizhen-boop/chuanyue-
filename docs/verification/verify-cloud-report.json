@@ -1,0 +1,59 @@
+{
+  "time": "2026-10-01T05:43:41.759Z",
+  "checks": [
+    {
+      "name": "server: page reaches __READY",
+      "ok": true
+    },
+    {
+      "name": "server: no failed requests",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "server: W key walks the character",
+      "ok": true,
+      "detail": {
+        "from": [
+          0,
+          0.24500000000000194,
+          5.8
+        ],
+        "to": [
+          -0.4513891440917997,
+          0.24500000000000194,
+          4.932962462983263
+        ],
+        "distance": 0.862
+      }
+    },
+    {
+      "name": "server: walk to trough 1 and press E rotates it",
+      "ok": true,
+      "detail": {
+        "before": 1,
+        "after": 2
+      }
+    },
+    {
+      "name": "server: no runtime errors",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "dist: page reaches __READY",
+      "ok": true
+    },
+    {
+      "name": "dist: no failed requests",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "dist: no runtime errors",
+      "ok": true,
+      "detail": []
+    }
+  ],
+  "passed": true
+}
