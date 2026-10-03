@@ -45,7 +45,7 @@ const sfx=createAudio();sfx.setMuted(!save.sfx);sfx.setMusicMuted(!save.music);
 // ---------- 世界与房间 ----------
 const W=createWorld(scene);
 const flags=save.flags;
-const ctx={world:W,sfx,toast,read,unlockNote,openLock,
+const ctx={world:W,camera,sfx,toast,read,unlockNote,openLock,
   inv:{has:id=>save.inv.includes(id),add:id=>{if(!save.inv.includes(id))save.inv.push(id);persist();renderInv();},remove:id=>{save.inv=save.inv.filter(x=>x!==id);persist();renderInv();}},
   flag:k=>!!flags[k],setFlag:k=>{flags[k]=true;persist();},
   milestone:n=>{if(n>save.milestone){save.milestone=n;persist();turtle.setProgress(n);turtle.celebrate();}},

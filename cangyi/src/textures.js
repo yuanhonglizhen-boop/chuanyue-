@@ -56,8 +56,8 @@ export function scrollTex(columns,{title,width=512,height=1024,paper='#efe1bd',i
 export function plaqueTex(text,{w=1024,h=256,bg='#16110e',fg='#e2b65a',size=150}={}){return canvas(w,h,(g)=>{g.fillStyle=bg;g.fillRect(0,0,w,h);g.strokeStyle=fg;g.lineWidth=10;g.strokeRect(12,12,w-24,h-24);g.lineWidth=3;g.strokeRect(30,30,w-60,h-60);
   g.fillStyle=fg;g.font=`bold ${size}px ${SERIF}`;g.textAlign='center';g.textBaseline='middle';g.shadowColor='rgba(255,210,120,.35)';g.shadowBlur=12;g.fillText(text,w/2,h/2+6);},{key:'plaque'+text+w+h+bg+fg,text:true});}
 // 单字牌（卦名等）
-export function glyphTex(text,{bg='#1a1410',fg='#e8c26a',size=150,ring=true}={}){return canvas(256,256,(g)=>{g.fillStyle=bg;g.fillRect(0,0,256,256);if(ring){g.strokeStyle=fg;g.lineWidth=8;g.strokeRect(10,10,236,236);}
-  g.fillStyle=fg;g.font=`bold ${size}px ${SERIF}`;g.textAlign='center';g.textBaseline='middle';g.fillText(text,128,136);},{key:'glyph'+text+bg+fg+size,text:true});}
+export function glyphTex(text,{bg='#1a1410',fg='#e8c26a',size=150,ring=true,w=256}={}){return canvas(w,256,(g)=>{g.fillStyle=bg;g.fillRect(0,0,w,256);if(ring){g.strokeStyle=fg;g.lineWidth=8;g.strokeRect(10,10,w-20,236);}
+  g.fillStyle=fg;g.font=`bold ${size}px ${SERIF}`;g.textAlign='center';g.textBaseline='middle';g.fillText(text,w/2,136);},{key:'glyph'+text+bg+fg+size+w,text:true});}
 // 卦画牌：三条爻（自下而上），可带卦名
 export function trigramTex(lines,{name='',bg='#1a1410',fg='#e8c26a'}={}){return canvas(256,320,(g,w,h)=>{g.fillStyle=bg;g.fillRect(0,0,w,h);g.strokeStyle=fg;g.lineWidth=6;g.strokeRect(8,8,w-16,h-16);
   g.fillStyle=fg;lines.forEach((y,i)=>{const yy=180-i*54;if(y)g.fillRect(48,yy,160,26);else{g.fillRect(48,yy,68,26);g.fillRect(140,yy,68,26);}});
