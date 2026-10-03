@@ -8,7 +8,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 /* 悬停提示、准星、通知 */
 #tip{position:fixed;transform:translate(14px,14px);pointer-events:none;background:var(--glass);border:1px solid var(--gold2);padding:4px 10px;font-size:14px;letter-spacing:.1em;z-index:8;white-space:nowrap}
 #crosshair{position:fixed;left:50%;top:50%;width:14px;height:14px;margin:-7px;border:2px solid rgba(241,226,189,.8);border-radius:50%;pointer-events:none;z-index:6}
-#toast{position:fixed;left:50%;top:70px;transform:translate(-50%,-8px);opacity:0;transition:.3s;background:var(--glass);border:1px solid var(--gold2);padding:10px 22px;z-index:9;max-width:calc(100% - 32px);text-align:center;letter-spacing:.06em;pointer-events:none;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+#toast{position:fixed;left:50%;top:108px;transform:translate(-50%,-8px);opacity:0;transition:.3s;background:var(--glass);border:1px solid var(--gold2);padding:10px 22px;z-index:9;max-width:calc(100% - 32px);text-align:center;letter-spacing:.06em;pointer-events:none;box-shadow:0 8px 30px rgba(0,0,0,.5)}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 /* 工具栏 */
 .tools{position:fixed;top:14px;right:14px;display:flex;gap:6px;z-index:7;flex-wrap:wrap;justify-content:flex-end}
