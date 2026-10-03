@@ -146,7 +146,9 @@ $('btn-notes').onclick=openNotes;$('btn-hint').onclick=openHint;
 $('btn-settings').onclick=()=>{$('fov').value=save.fov;$('sens').value=save.sens;$('settings').showModal();};
 $('fov').oninput=e=>{save.fov=+e.target.value;camera.fov=save.fov;camera.updateProjectionMatrix();persist();};
 $('sens').oninput=e=>{save.sens=+e.target.value;persist();};
-$('btn-reset').onclick=()=>{if(confirm('清除存档，从头开始？')){try{localStorage.removeItem(SAVE_KEY);}catch{}location.reload();}};
+/* 不用 confirm()：有的环境（如内嵌页面）会直接拦掉弹窗。点一下变成"再点一次确认" */
+{const b=$('btn-reset'),txt=b.textContent;let armed=0;b.onclick=()=>{if(Date.now()-armed<4000){try{localStorage.removeItem(SAVE_KEY);}catch{}location.reload();return;}
+  armed=Date.now();b.textContent='再点一次确认清除';setTimeout(()=>{if(Date.now()-armed>=3900)b.textContent=txt;},4000);};}
 function syncAudio(){$('btn-music').classList.toggle('off',sfx.musicMuted);$('btn-sound').classList.toggle('off',sfx.muted);}
 $('btn-music').onclick=()=>{sfx.setMusicMuted(!sfx.musicMuted);save.music=!sfx.musicMuted;persist();syncAudio();};
 $('btn-sound').onclick=()=>{sfx.setMuted(!sfx.muted);save.sfx=!sfx.muted;persist();syncAudio();};
