@@ -105,8 +105,17 @@ const check=(n,ok,d)=>{report.checks.push({name:n,ok:!!ok,detail:d});console.log
     // 先点错（北灯），应全灭
     await clickObj('__C.rooms[2].lamps[4].group');await p.evaluate(()=>__C.step(.6));const bad=await p.evaluate(()=>__C.rooms[2].lamps.every(l=>!l.lit));
     const ORDER=await p.evaluate(()=>__C.rooms[2].order);for(const k of ORDER){await clickObj(`__C.rooms[2].lamps[${k}].group`);await p.evaluate(()=>__C.step(.15));}
-    await p.evaluate(()=>__C.step(1.5));await shot(p,'12-lamps');
-    check('后天室：点错全灭；按"帝出乎震……成言乎艮"（东→东南→南→西南→西→西北→北→东北）点亮八灯，北门开',bad&&await p.evaluate(()=>__C.save.flags.lamps&&__C.save.notes.includes('houtian')&&__C.save.milestone===6));
+    await p.evaluate(()=>__C.step(1));await shot(p,'12-lamps');
+    const s1=await p.evaluate(()=>({lamps1:!!__C.save.flags.lamps1,note:__C.save.notes.includes('houtian'),ms:__C.save.milestone}));
+    check('后天室第一步：点错全灭；照原文卦名"震巽离坤兑乾坎艮"点亮八灯（即东→东南→南→西南→西→西北→北→东北）',bad&&s1.lamps1&&s1.note&&s1.ms===6,s1);
+    // 第二步：阁主三问（卦牌隐去，按方位作答）
+    await p.evaluate(()=>__C.step(3));
+    const qs=await p.evaluate(()=>({quest:!document.getElementById('quest').hidden,text:document.getElementById('quest-text').textContent,hidden:__C.rooms[2].lamps.every(l=>!l.faces[0].visible&&l.blanks[0].visible)}));
+    await clickObj('__C.rooms[2].lamps[0].group');await p.evaluate(()=>__C.step(.3));const wrongQ=await p.evaluate(()=>!__C.save.flags.quiz1);
+    for(const q of await p.evaluate(()=>__C.rooms[2].quiz.map(q=>q.k))){await clickObj(`__C.rooms[2].lamps[${q}].group`);await p.evaluate(()=>__C.step(2.2));}
+    await p.evaluate(()=>__C.step(1.5));await shot(p,'12b-quiz');
+    const done=await p.evaluate(()=>({lamps:!!__C.save.flags.lamps,ms:__C.save.milestone,note:__C.save.notes.includes('xianhou'),quest:document.getElementById('quest').hidden}));
+    check('后天室第二步：卦牌隐去，阁主三问（坎在北；后天乾在西北；后天离在南），答错不算，答对三题北门开',qs.quest&&qs.hidden&&wrongQ&&done.lamps&&done.ms===7&&done.note&&done.quest,{qs,wrongQ,done});
     await p.evaluate(()=>__C.setView('third'));await walk(1.6,-27.6);await walk(0,-29.6);await walk(0,-32.2);await p.evaluate(()=>__C.step(.3));
     check('穿过北门：第一卷结束页（用时、问书灵次数、读到的知识）',await p.evaluate(()=>document.getElementById('ending').open&&document.querySelectorAll('#end-notes li').length>=6));
     await shot(p,'13-ending');await p.click('#ending .primary');
@@ -114,12 +123,12 @@ const check=(n,ok,d)=>{report.checks.push({name:n,ok:!!ok,detail:d});console.log
     await p.evaluate(()=>{__C.setView('third');__C.cam.tYaw=__C.cam.yaw=Math.PI;__C.cam.tPitch=__C.cam.pitch=.9;__C.cam.dist=2.6;__C.step(1);});await shot(p,'14-shell');
     // 笔记
     await p.keyboard.press('KeyN');const notes=await p.evaluate(()=>[...document.querySelectorAll('#notes-list .note:not(.locked) b')].map(b=>b.textContent));await shot(p,'15-notes');
-    check('易笔记：读到的知识都在（含出处）',notes.length>=6,notes);await p.click('#notes .x');
+    check('易笔记：读到的知识都在（含出处）',notes.length>=7,notes);await p.click('#notes .x');
     // 存档：刷新后"继续"，进度与位置都在
     await p.evaluate(()=>__C.step(1));await p.reload();await p.waitForFunction(()=>window.__C?.ready,null,{timeout:180000});
     const cont=await p.evaluate(()=>!document.getElementById('btn-continue').hidden);await p.click('#btn-continue');await p.evaluate(()=>__C.step(.3));
     const rest=await p.evaluate(()=>({z:+__C.P.z.toFixed(1),drawers:__C.rooms[0].drawers.every(d=>d.open),lamps:__C.rooms[2].lamps.every(l=>l.lit),ms:__C.save.milestone}));
-    check('存档：刷新后可"继续"，机关状态与位置都恢复',cont&&rest.drawers&&rest.lamps&&rest.ms===6&&rest.z<-30,rest);
+    check('存档：刷新后可"继续"，机关状态与位置都恢复',cont&&rest.drawers&&rest.lamps&&rest.ms===7&&rest.z<-30,rest);
     // 音乐开关：关后完全静音
     await p.click('#btn-sound');const peak=async()=>{let m=0;for(let i=0;i<10;i++){await p.waitForTimeout(150);m=Math.max(m,await p.evaluate(()=>__C.sfx._level()));}return +m.toFixed(4);};
     await p.waitForTimeout(2500);const on=await peak();await p.click('#btn-music');await p.waitForTimeout(2000);const off=await peak();await p.click('#btn-music');await p.click('#btn-sound');

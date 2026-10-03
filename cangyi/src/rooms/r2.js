@@ -27,9 +27,7 @@ export function buildRoom2(ctx){
   // 太极（台心浮雕，装饰）
   const yin=W.mesh(new T.CircleGeometry(1.2,48,0,Math.PI),new T.MeshStandardMaterial({color:'#1a1512',roughness:.4}),0,.151,0,dais);yin.rotation.x=-Math.PI/2;
   const yang=W.mesh(new T.CircleGeometry(1.2,48,Math.PI,Math.PI),new T.MeshStandardMaterial({color:'#e8dcc0',roughness:.4}),0,.151,0,dais);yang.rotation.x=-Math.PI/2;
-  // 地上八个方位字（每个石座外侧一块）。字会随镜头转动，从哪边看都是正的；不挡点击
-  const dirMarks=DIRS.map((txt,k)=>{const a=k*Math.PI/4,g=new T.Group();g.position.set(cx+Math.sin(a)*3.95,.02,cz+Math.cos(a)*3.95);W.root.add(g);
-    const w=txt.length>1?1.05:.7;const m=W.mesh(new T.PlaneGeometry(w,.7),new T.MeshStandardMaterial({map:glyphTex(txt,{bg:'#2b2522',fg:'#d4a64a',size:txt.length>1?104:150,w:txt.length>1?384:256}),roughness:.6,metalness:.3}),0,0,0,g);m.rotation.x=-Math.PI/2;m.userData.noPick=true;return g;});
+  const marks=dirMarks(W,ctx,cx,cz,3.95);
 
   const slots=DIRS.map((dir,k)=>{const a=k*Math.PI/4,x=Math.sin(a)*2.75,z=Math.cos(a)*2.75;/* 石座之间留出宽松的通道 */
     const g=new T.Group();g.position.set(cx+x,0,cz+z);g.rotation.y=a;W.root.add(g);// 面朝外
@@ -84,7 +82,6 @@ export function buildRoom2(ctx){
     else ctx.toast(ctx.flag('octagon')?'门锁着。台心的铜箱里也许有钥匙。':'门锁着。');}});
 
   W.updaters.push((dt,t)=>{
-    const cp=ctx.camera.position;for(const g of dirMarks)g.rotation.y=Math.atan2(cp.x-g.position.x,cp.z-g.position.z);
     for(const tl of tiles){tl.cur.lerp(tl.target,Math.min(1,dt*6));tl.group.position.set(tl.cur.x,1.15+Math.sin(t*1.5+tl.slot)*.03+(tl===selected?.12:0),tl.cur.z);tl.group.rotation.y=tl.rot;if(tl===selected)tl.glow.material.opacity=.4+Math.sin(t*6)*.2;}
     if(ctx.flag('octagon')&&chestT<1){chestT=Math.min(1,chestT+dt*.5);chest.position.y=-1+chestT*1.16;if(chestT===1&&!chestCol)chestCol=W.addBox(cx,cz,.5,.35,'chest');}
     if(chestOpen&&lidT<1){lidT=Math.min(1,lidT+dt*1.2);lid.rotation.x=-lidT*1.6;}
@@ -99,3 +96,10 @@ export function buildRoom2(ctx){
 export function corridor(W,z0,z1){const T=THREE,len=Math.abs(z1-z0),zc=(z0+z1)/2;
   for(const s of [-1,1]){W.mesh(new T.BoxGeometry(.2,3.1,len),W.M.lacquer,s*1.1,1.55,zc);W.addBox(s*1.1,zc,.12,len/2,'corridor');}
   W.mesh(new T.BoxGeometry(2.4,.2,len),W.M.darkWood,0,3.1,zc);const f=W.mesh(new T.PlaneGeometry(2.2,len),W.M.darkWood,0,.005,zc);f.rotation.x=-Math.PI/2;f.userData.floor=true;}
+
+// 地上八个方位字（第二、三间共用）。字随镜头转动，从哪边看都是正的；不挡点击
+export function dirMarks(W,ctx,cx,cz,r){const T=THREE;
+  const marks=DIRS.map((txt,k)=>{const a=k*Math.PI/4,g=new T.Group();g.position.set(cx+Math.sin(a)*r,.02,cz+Math.cos(a)*r);W.root.add(g);
+    const w=txt.length>1?1.05:.7;const m=W.mesh(new T.PlaneGeometry(w,.7),new T.MeshStandardMaterial({map:glyphTex(txt,{bg:'#2b2522',fg:'#d4a64a',size:txt.length>1?104:150,w:txt.length>1?384:256}),roughness:.6,metalness:.3}),0,0,0,g);m.rotation.x=-Math.PI/2;m.userData.noPick=true;return g;});
+  W.updaters.push(()=>{const cp=ctx.camera.position;for(const g of marks)g.rotation.y=Math.atan2(cp.x-g.position.x,cp.z-g.position.z);});
+  return marks;}

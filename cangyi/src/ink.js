@@ -1,20 +1,19 @@
 import * as THREE from '../vendor/three.module.js';
 
 // 水墨后期：把三维画面转成"纸上的水墨"。
-// 1) 正常渲染一遍颜色与深度；2) 再用法线材质渲染一遍法线；
-// 3) 全屏着色器：深度/法线/明暗的边缘 → 墨线（带笔触抖动）；明暗 → 分层墨色；只保留朱砂红；叠宣纸纹理与晕染。
+// 1) 正常渲染一遍颜色与深度；2) 全屏着色器（法线由深度推算，不另渲染）：深度/法线/明暗的边缘 → 墨线（带笔触抖动）；明暗 → 分层墨色；只保留朱砂红；叠宣纸纹理与晕染。
 export function createInk(renderer){
   const size=new THREE.Vector2();
   const mk=()=>{const rt=new THREE.WebGLRenderTarget(2,2,{type:THREE.HalfFloatType});rt.depthTexture=new THREE.DepthTexture(2,2);rt.depthTexture.type=THREE.UnsignedIntType;return rt;};
-  const colorRT=mk(),normalRT=new THREE.WebGLRenderTarget(2,2);
-  const normalMat=new THREE.MeshNormalMaterial();
+  const colorRT=mk();
   const paper=paperTex();
   const quadCam=new THREE.OrthographicCamera(-1,1,1,-1,0,1),quadScene=new THREE.Scene();
-  const mat=new THREE.ShaderMaterial({uniforms:{tColor:{value:colorRT.texture},tDepth:{value:colorRT.depthTexture},tNormal:{value:normalRT.texture},tPaper:{value:paper},res:{value:new THREE.Vector2()},near:{value:.05},far:{value:120},time:{value:0},projInv:{value:new THREE.Matrix4()},camWorld:{value:new THREE.Matrix4()},
+  const mat=new THREE.ShaderMaterial({uniforms:{tColor:{value:colorRT.texture},tDepth:{value:colorRT.depthTexture},tPaper:{value:paper},res:{value:new THREE.Vector2()},near:{value:.05},far:{value:120},time:{value:0},projInv:{value:new THREE.Matrix4()},camWorld:{value:new THREE.Matrix4()},
       paperCol:{value:new THREE.Color('#eee9dd')},inkCol:{value:new THREE.Color('#1b1a18')},redCol:{value:new THREE.Color('#a8322a')}},
     vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}',
     fragmentShader:`
-      uniform sampler2D tColor,tDepth,tNormal,tPaper;uniform vec2 res;uniform float near,far,time;uniform mat4 projInv,camWorld;uniform vec3 paperCol,inkCol,redCol;varying vec2 vUv;
+      uniform sampler2D tColor,tDepth,tPaper;uniform vec2 res;uniform float near,far,time;uniform mat4 projInv,camWorld;uniform vec3 paperCol,inkCol,redCol;varying vec2 vUv;
+      vec3 vpos(vec2 uv){float d=texture2D(tDepth,uv).x;vec4 v=projInv*vec4(uv*2.-1.,d*2.-1.,1.);return v.xyz/v.w;}
       float lin(vec2 uv){float d=texture2D(tDepth,uv).x;float z=d*2.-1.;return (2.*near*far)/(far+near-z*(far-near));}
       float lum(vec3 c){return dot(c,vec3(.299,.587,.114));}
       float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
@@ -28,9 +27,11 @@ export function createInk(renderer){
         float e=0.,eN=0.,eL=0.;
         for(int i=0;i<4;i++){vec2 o=i==0?vec2(px.x,0):i==1?vec2(-px.x,0):i==2?vec2(0,px.y):vec2(0,-px.y);o*=1.4;
           float d=lin(uv+o);e+=abs(d-dC)/max(dC,.5);
-          eN+=length(texture2D(tNormal,uv+o).rgb-texture2D(tNormal,uv).rgb);
           eL+=abs(lum(texture2D(tColor,uv+o).rgb)-lum(texture2D(tColor,uv).rgb));}
         float e2=0.;for(int i=0;i<4;i++){vec2 o=i==0?vec2(px.x,px.y):i==1?vec2(-px.x,px.y):i==2?vec2(px.x,-px.y):vec2(-px.x,-px.y);o*=2.6;e2+=abs(lin(uv+o)-dC)/max(dC,.5);}
+        /* 折角：深度的二阶差分（不再单独渲染法线，省一遍绘制） */
+        float dL=lin(uv-vec2(px.x,0)),dR=lin(uv+vec2(px.x,0)),dU=lin(uv+vec2(0,px.y)),dD=lin(uv-vec2(0,px.y));
+        eN=(abs(dL+dR-2.*dC)+abs(dU+dD-2.*dC))/max(dC,.5)*40.;
         float edge=max(smoothstep(.06,.22,e),smoothstep(.12,.4,e2)*.8)+smoothstep(.35,.9,eN)*.85+smoothstep(.12,.4,eL)*.45;
         float fade=smoothstep(28.,6.,dC);// 远处墨线淡去
         edge=clamp(edge,0.,1.)*fade*(.75+.5*noise(vUv*res*.12));
@@ -42,7 +43,7 @@ export function createInk(renderer){
         float mist=smoothstep(9.,30.,dC);tone=mix(tone,1.,mist*.85);
         // 还原世界坐标：笔触"贴"在物体上，不随镜头游动
         float dr=texture2D(tDepth,vUv).x;vec4 vp=projInv*vec4(vUv*2.-1.,dr*2.-1.,1.);vp/=vp.w;vec3 wp=(camWorld*vp).xyz;
-        vec3 nv=texture2D(tNormal,vUv).rgb*2.-1.;vec3 nw=normalize(mat3(camWorld)*nv);
+        vec3 p0=vpos(vUv),pxp=vpos(vUv+vec2(px.x,0)),pyp=vpos(vUv+vec2(0,px.y));vec3 nv=normalize(cross(pxp-p0,pyp-p0));vec3 nw=normalize(mat3(camWorld)*nv);
         float bg=step(.9999,dr);
         float vert=1.-abs(nw.y);// 1 = 墙、柱等竖直面
         // 竖直面：竖向皴擦（干笔飞白），自墙根往上由浓转淡
@@ -69,15 +70,12 @@ export function createInk(renderer){
         gl_FragColor=vec4(col,1.);
       }`});
   quadScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),mat));
-  function setSize(w,h){const pr=renderer.getPixelRatio();colorRT.setSize(w*pr,h*pr);normalRT.setSize(w*pr,h*pr);mat.uniforms.res.value.set(w*pr,h*pr);}
+  function setSize(w,h){const pr=renderer.getPixelRatio();colorRT.setSize(w*pr,h*pr);mat.uniforms.res.value.set(w*pr,h*pr);}
   function render(scene,camera,t=0){
-    renderer.getDrawingBufferSize(size);if(size.x!==mat.uniforms.res.value.x||size.y!==mat.uniforms.res.value.y){colorRT.setSize(size.x,size.y);normalRT.setSize(size.x,size.y);mat.uniforms.res.value.copy(size);}
+    renderer.getDrawingBufferSize(size);if(size.x!==mat.uniforms.res.value.x||size.y!==mat.uniforms.res.value.y){colorRT.setSize(size.x,size.y);mat.uniforms.res.value.copy(size);}
     mat.uniforms.near.value=camera.near;mat.uniforms.far.value=camera.far;mat.uniforms.time.value=t;mat.uniforms.projInv.value.copy(camera.projectionMatrixInverse);mat.uniforms.camWorld.value.copy(camera.matrixWorld);
     const tm=renderer.toneMapping;
     renderer.setRenderTarget(colorRT);renderer.render(scene,camera);
-    const bg=scene.background,fog=scene.fog;scene.overrideMaterial=normalMat;scene.background=null;scene.fog=null;
-    renderer.setRenderTarget(normalRT);renderer.render(scene,camera);
-    scene.overrideMaterial=null;scene.background=bg;scene.fog=fog;
     renderer.setRenderTarget(null);renderer.toneMapping=THREE.NoToneMapping;renderer.render(quadScene,quadCam);renderer.toneMapping=tm;
   }
   return {render,setSize};

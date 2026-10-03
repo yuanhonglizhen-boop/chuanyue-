@@ -18,21 +18,19 @@ const ITEMS={key1:{name:'门钥',icon:'钥'},key2:{name:'后门钥匙',icon:'钥
 
 // ---------- 渲染 ----------
 const renderer=new THREE.WebGLRenderer({antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));/* 高分屏上 2 倍太吃力，1.5 倍肉眼差别不大 */renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;renderer.outputColorSpace=THREE.SRGBColorSpace;
 $('stage').append(renderer.domElement);
 const scene=new THREE.Scene();scene.background=new THREE.Color('#0b0705');scene.fog=new THREE.Fog('#0b0705',16,42);
 /* 画风：ink = 水墨（后期处理），lacquer = 原先的漆金 */
 const ink=createInk(renderer);
 const hemiL=new THREE.HemisphereLight('#ffffff','#d8d0c0',0),ambL=new THREE.AmbientLight('#ffffff',0);scene.add(hemiL,ambL);
-let pointLights=[];
 const inkSun=new THREE.DirectionalLight('#ffffff',0);inkSun.position.set(-4,9,6);scene.add(inkSun);
 function applyStyle(){const isInk=save.style==='ink';turtle.root.traverse(o=>o.userData.noInk=true);/* 灵龟保留所选颜色 */inkify(scene,isInk);
   if(isInk){scene.background=new THREE.Color('#f2ece0');scene.fog=new THREE.Fog('#f2ece0',10,30);renderer.toneMapping=THREE.NoToneMapping;hemiL.intensity=1.3;ambL.intensity=.8;}
   else{scene.background=new THREE.Color('#0b0705');scene.fog=new THREE.Fog('#0b0705',16,42);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;hemiL.intensity=0;ambL.intensity=0;}
   /* 水墨下灯光改成白光、减弱：暖光会被误认作朱砂红，满屋泛红 */
   scene.traverse(o=>{if(!o.isPointLight||o.parent===null)return;o.userData.base??=o.intensity;o.userData.col??=o.color.clone();
-    if(isInk)o.color.set('#ffffff');else o.color.copy(o.userData.col);});
-  pointLights=[];scene.traverse(o=>{if(o.isPointLight)pointLights.push(o);});
+    o.color.copy(o.userData.col);o.visible=!isInk;});/* 水墨下不用点光源：二十几盏灯是最大的开销，水墨也不需要它们 */
   inkSun.intensity=isInk?1.1:0;document.body.dataset.style=save.style;}
 const camera=new THREE.PerspectiveCamera(save.fov,1,.05,120);
 scene.add(new THREE.HemisphereLight('#ffdcb0','#2a160e',.5));scene.add(new THREE.AmbientLight('#ffe8c8',.12));
@@ -45,7 +43,8 @@ const sfx=createAudio();sfx.setMuted(!save.sfx);sfx.setMusicMuted(!save.music);
 // ---------- 世界与房间 ----------
 const W=createWorld(scene);
 const flags=save.flags;
-const ctx={world:W,camera,sfx,toast,read,unlockNote,openLock,
+function setQuest(title,text){const q=$('quest');if(!title){q.hidden=true;return;}$('quest-title').textContent=title;$('quest-text').textContent=text;q.hidden=false;}
+const ctx={world:W,camera,sfx,toast,setQuest,read,unlockNote,openLock,
   inv:{has:id=>save.inv.includes(id),add:id=>{if(!save.inv.includes(id))save.inv.push(id);persist();renderInv();},remove:id=>{save.inv=save.inv.filter(x=>x!==id);persist();renderInv();}},
   flag:k=>!!flags[k],setFlag:k=>{flags[k]=true;persist();},
   milestone:n=>{if(n>save.milestone){save.milestone=n;persist();turtle.setProgress(n);turtle.celebrate();}},
@@ -56,8 +55,8 @@ rooms.forEach(r=>r.restore(flags));
 // ---------- 灵龟 ----------
 const turtle=createTurtle({palette:save.palette,envMap:scene.environment});scene.add(turtle.root);turtle.setProgress(save.milestone);
 turtle.root.traverse(o=>o.userData.noPick=true);
-const P={x:0,z:3.4,yaw:0,vx:0,vz:0,speed:0};
-const cam={yaw:0,pitch:.42,dist:4.6,fpPitch:.08,tYaw:0,tPitch:.38,focus:new THREE.Vector3()};
+const P={x:0,z:3.4,yaw:0,vx:0,vz:0,speed:0,px:0,pz:3.4,pyaw:0};/* p* = 上一步的位置，用来在两步之间插值，画面不抖 */
+const cam={curD:4.6,yaw:0,pitch:.42,dist:4.6,fpPitch:.08,tYaw:0,tPitch:.38,focus:new THREE.Vector3()};
 let view=save.view;
 
 // ---------- 状态 ----------
@@ -161,7 +160,7 @@ function showTitle(){game.mode='title';$('title').hidden=false;$('hud').hidden=t
 function startGame(fresh){sfx.unlock();
   if(fresh&&save.started){try{localStorage.removeItem(SAVE_KEY);}catch{}const keep={palette:save.palette,view:save.view,fov:save.fov,sens:save.sens,music:save.music,sfx:save.sfx,style:save.style};save={...structuredClone(DEFAULTS),...keep};location.reload();return;}
   save.started=true;persist();game.mode='play';$('title').hidden=true;$('hud').hidden=false;
-  const p=save.pos||rooms[0].spawn;P.x=p.x;P.z=p.z;P.yaw=p.yaw||0;cam.yaw=cam.tYaw=P.yaw;setView(view);renderInv();
+  const p=save.pos||rooms[0].spawn;P.x=P.px=p.x;P.z=P.pz=p.z;P.yaw=P.pyaw=p.yaw||0;cam.yaw=cam.tYaw=P.yaw;setView(view);renderInv();
   if(!save.pos)toast('拖动画面看四周，点击物品互动；WASD 走动。V 切换视角，H 问书灵。',6000);}
 $('btn-begin').onclick=()=>startGame(true);$('btn-continue').onclick=()=>startGame(false);
 $('swatches').innerHTML=Object.entries(PALETTES).map(([k,p])=>'<button data-pal="'+k+'" style="--c:'+p.shell+';--c2:'+p.plate+'" aria-pressed="'+(k===save.palette)+'"><i></i>'+p.name+'</button>').join('');
@@ -173,6 +172,7 @@ function showEnding(){game.ended=true;save.flags.ended=true;persist();sfx.solve(
 // ---------- 主循环 ----------
 const clock=new THREE.Clock();const FIXED=1/60;let acc=0,testMove=null;
 function step(dt){
+  P.px=P.x;P.pz=P.z;P.pyaw=P.yaw;
   game.time+=dt;
   if(game.mode==='play'){save.time+=dt;
     // 输入：键盘（相对镜头）或点地面行走
@@ -201,35 +201,41 @@ function step(dt){
   W.update(dt,game.time);turtle.update(dt,{speed:game.mode==='play'?P.speed:0});
   mk.material.opacity=Math.max(0,mk.material.opacity-dt*1.5);mk.scale.multiplyScalar(1+dt*.6);
 }
-function render(dt){
-  turtle.root.position.set(P.x,0,P.z);turtle.root.rotation.y=P.yaw;
+const _fv=new THREE.Vector3();
+function render(dt,alpha=1){
+  /* 逻辑按固定步长走，画面按屏幕刷新走：两步之间插值，乌龟和镜头才平滑 */
+  let dyaw=P.yaw-P.pyaw;dyaw=Math.atan2(Math.sin(dyaw),Math.cos(dyaw));
+  const rx=P.px+(P.x-P.px)*alpha,rz=P.pz+(P.z-P.pz)*alpha,ryaw=P.pyaw+dyaw*alpha;
+  turtle.root.position.set(rx,0,rz);turtle.root.rotation.y=ryaw;
   const e=1-Math.exp(-dt*10);let dy=cam.tYaw-cam.yaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));cam.yaw+=dy*e;cam.pitch+=(cam.tPitch-cam.pitch)*e;
   if(keys.has('KeyQ'))cam.tYaw+=dt*1.6;if(keys.has('KeyR'))cam.tYaw-=dt*1.6;
   if(game.mode==='title'){// 标题：镜头对着灵龟，缓缓环绕
     const a=Math.PI+Math.sin(game.time*.2)*.45,r=2.4;cam.focus.set(P.x,.5,P.z+.4);camera.position.set(P.x+Math.sin(a)*r,1.05,P.z+Math.cos(a)*r);camera.lookAt(cam.focus);/* 在灵龟正前方，背景是南墙匾额与格窗 */
     const R=stage.getBoundingClientRect(),wide=R.width>820;camera.setViewOffset(R.width,R.height,wide?-R.width*.18:0,wide?0:R.height*.22,R.width,R.height);}
   else{camera.clearViewOffset();
-    if(view==='first'){const hx=P.x-Math.sin(P.yaw)*.42,hz=P.z-Math.cos(P.yaw)*.42;camera.position.set(hx,turtle.eyeHeight,hz);
+    if(view==='first'){const hx=rx-Math.sin(ryaw)*.42,hz=rz-Math.cos(ryaw)*.42;camera.position.set(hx,turtle.eyeHeight,hz);
       const cp=Math.cos(cam.fpPitch);camera.lookAt(hx-Math.sin(cam.yaw)*cp,turtle.eyeHeight-Math.sin(cam.fpPitch),hz-Math.cos(cam.yaw)*cp);}
-    else{cam.focus.lerp(new THREE.Vector3(P.x,1,P.z),1-Math.exp(-dt*8));
+    else{cam.focus.lerp(_fv.set(rx,1,rz),1-Math.exp(-dt*12));
       let d=cam.dist;const dirx=Math.sin(cam.yaw)*Math.cos(cam.pitch),diry=Math.sin(cam.pitch),dirz=Math.cos(cam.yaw)*Math.cos(cam.pitch);
       // 镜头不穿墙：沿镜头方向逐步检测
       for(let s=.4;s<=cam.dist;s+=.1){if(W.blocked(cam.focus.x+dirx*s,cam.focus.z+dirz*s,.12)){d=Math.max(.6,s-.25);break;}}
+      /* 被墙挡时快速拉近，挡开后慢慢退回，不会一下一下地弹 */
+      cam.curD+=(d-cam.curD)*(1-Math.exp(-dt*(d<cam.curD?18:3)));d=Math.min(d,cam.curD);
       camera.position.set(cam.focus.x+dirx*d,Math.min(4.2,cam.focus.y+diry*d),cam.focus.z+dirz*d);camera.lookAt(cam.focus);}}
   if(!$('compass').hidden)$('compass-dial').style.transform='rotate('+(cam.yaw*180/Math.PI)+'deg)';
   if(performance.now()>game.toastUntil)$('toast').classList.remove('show');
-  if(save.style==='ink'){/* 灯的亮度每帧由动画写入，这里渲染时临时减弱再还原 */const keep=pointLights.map(l=>l.intensity);pointLights.forEach(l=>l.intensity*=.35);ink.render(scene,camera,game.time);pointLights.forEach((l,i)=>l.intensity=keep[i]);}else renderer.render(scene,camera);
+  if(save.style==='ink')ink.render(scene,camera,game.time);else renderer.render(scene,camera);
 }
 function resize(){const r=stage.getBoundingClientRect();renderer.setSize(r.width,r.height,false);camera.aspect=r.width/Math.max(1,r.height);camera.updateProjectionMatrix();}
 addEventListener('resize',resize);
-function frame(){requestAnimationFrame(frame);const dt=Math.min(clock.getDelta(),.1);acc+=dt;let n=0;while(acc>=FIXED&&n<8){step(FIXED);acc-=FIXED;n++;}if(n===8)acc=0;render(dt);}
+function frame(){requestAnimationFrame(frame);const dt=Math.min(clock.getDelta(),.1);acc+=dt;let n=0;while(acc>=FIXED&&n<8){step(FIXED);acc-=FIXED;n++;}if(n===8)acc=0;render(dt,acc/FIXED);}
 applyStyle();resize();syncAudio();renderInv();showTitle();frame();$('loading').hidden=true;
 addEventListener('pointerdown',()=>sfx.unlock(),{once:true});addEventListener('keydown',()=>sfx.unlock(),{once:true});
 
 // 测试接口：固定步长推进；把世界坐标投到屏幕上，供测试用真实鼠标去点
-window.__C={scene,THREE,get save(){return save;},get P(){return P;},get game(){return game;},rooms,camera,cam,sfx,turtle,start:startGame,setView,setStyle:(v)=>{save.style=v;persist();applyStyle();render(1/60);},toggleView,openHint,currentRoom:()=>currentRoom().id,
+window.__C={scene,THREE,renderer,get save(){return save;},get P(){return P;},get game(){return game;},rooms,camera,cam,sfx,turtle,start:startGame,setView,setStyle:(v)=>{save.style=v;persist();applyStyle();render(1/60);},toggleView,openHint,currentRoom:()=>currentRoom().id,
   step(sec,{move=null,draw=true}={}){testMove=move;for(let t=0;t<sec-1e-9;t+=FIXED)step(FIXED);testMove=null;if(draw)render(1/60);},
   screenOf(obj){const v=new THREE.Vector3();obj.getWorldPosition(v);v.project(camera);const r=stage.getBoundingClientRect();return {x:r.left+(v.x*.5+.5)*r.width,y:r.top+(-v.y*.5+.5)*r.height,inView:v.z<1&&Math.abs(v.x)<1&&Math.abs(v.y)<1};},
-  lookAt(x,y,z){const dx=x-P.x,dz=z-P.z;cam.yaw=cam.tYaw=Math.atan2(dx,dz)+Math.PI;cam.pitch=cam.tPitch;cam.focus.set(P.x,1,P.z);if(view==='first'){const d=Math.hypot(dx,dz);cam.fpPitch=Math.atan2(turtle.eyeHeight-y,d);}render(1/60);},/* 测试用：镜头立即到位，不做缓动 */
+  lookAt(x,y,z){P.px=P.x;P.pz=P.z;P.pyaw=P.yaw;cam.curD=cam.dist;const dx=x-P.x,dz=z-P.z;cam.yaw=cam.tYaw=Math.atan2(dx,dz)+Math.PI;cam.pitch=cam.tPitch;cam.focus.set(P.x,1,P.z);if(view==='first'){const d=Math.hypot(dx,dz);cam.fpPitch=Math.atan2(turtle.eyeHeight-y,d);}render(1/60);},/* 测试用：镜头立即到位，不做缓动 */
   pickAt(cx,cy){const h=pick(ndcOf(cx,cy));return h?{type:h.type,label:h.it?.label,point:[h.point.x,h.point.y,h.point.z].map(v=>+v.toFixed(2))}:null;},
   ready:true};
