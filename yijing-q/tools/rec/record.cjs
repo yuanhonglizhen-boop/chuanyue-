@@ -7,7 +7,7 @@ const {spawn,execFileSync}=require('node:child_process'),fs=require('node:fs'),p
 const {chromium}=require('playwright');
 const root=path.join(__dirname,'..','..'),DRY=!!process.env.DRY,UPTO=process.env.UPTO||'end';
 const out=process.env.OUT||path.join(root,'docs','video'),framesDir=path.join(out,'frames');
-const W=1920,H=1080,F=1/30,MAXF=process.env.MAXSEC?Math.round(+process.env.MAXSEC*30):0;
+const W=1280,H=720,DSF=1.5,F=1/30,MAXF=process.env.MAXSEC?Math.round(+process.env.MAXSEC*30):0;
 class Stop extends Error{}
 
 // ---------- 路线（与 tools/verify*.cjs 相同的航点） ----------
@@ -27,7 +27,7 @@ const hold=yang=>`Q.level.held&&Q.level.held.yang===${yang}`;
 
 (async()=>{
   fs.mkdirSync(framesDir,{recursive:true});if(!DRY)for(const f of fs.readdirSync(framesDir))fs.unlinkSync(path.join(framesDir,f));
-  const b=await chromium.launch();const p=await b.newPage({viewport:{width:W,height:H}});const errs=[];p.on('pageerror',e=>errs.push(String(e)));
+  const b=await chromium.launch();const p=await b.newPage({viewport:{width:W,height:H},deviceScaleFactor:DSF});const errs=[];p.on('pageerror',e=>errs.push(String(e)));
   await p.goto(pathToFileURL(path.join(root,'dist','易境-爻爻.html')).href);await p.waitForFunction(()=>window.__Q?.ready,null,{timeout:180000});
   await p.evaluate(()=>{try{localStorage.clear();}catch{}});await p.reload();await p.waitForFunction(()=>window.__Q?.ready,null,{timeout:180000});
   await p.addScriptTag({content:fs.readFileSync(path.join(__dirname,'agent.js'),'utf8')});
@@ -38,7 +38,7 @@ const hold=yang=>`Q.level.held&&Q.level.held.yang===${yang}`;
   const play=async(sec,speed=1)=>{for(let i=0,m=Math.round(sec/F);i<m;i++)await fr(speed*F);};
   const go=async(pts,speed=1)=>{await ev(pts=>__R.route(pts),pts);for(;;){const r=await fr(speed*F);if(!r.busy)break;}};
   const cut=async pts=>{await ev(pts=>{__R.route(pts);__R.skipRoute();},pts);};
-  const cap=html=>ev(h=>__R.caption(h),html||null);
+  const cap=(html,pos)=>ev(([h,p])=>__R.caption(h,p),[html||null,pos||null]);
   const speed=x=>ev(x=>__R.speed(x),x);
   const until=async(cond,speed=1,max=30)=>{for(let i=0;i<max/F;i++){if(await ev(c=>{const Q=__Q,P=Q.player;return !!eval(c);},cond))return;await fr(speed*F);}throw Error('until timeout: '+cond);};
   const closeDlg=()=>ev(()=>document.querySelectorAll('dialog[open]').forEach(d=>d.close()));
@@ -48,7 +48,7 @@ const hold=yang=>`Q.level.held&&Q.level.held.yang===${yang}`;
   try{
   // ================= 开场：选角色 =================
   await section('title');
-  await cap('先选一个小团子，四个角色本领一样，<b>手感</b>不同');
+  await cap('先选一个小团子<br>四个角色本领一样，<b>手感</b>不同','right');
   await play(1.2);
   for(const k of ['nuo','lin','koi','yao']){await ev(k=>__Q.selectCharacter(k),k);await play(1.3);}
   await cap(null);await play(.3);

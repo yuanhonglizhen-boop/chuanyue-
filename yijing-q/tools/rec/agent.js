@@ -20,14 +20,14 @@
     const orig=S[n];S[n]=function(...a){if(capturing||STATE.includes(n))log.push({t:+videoT.toFixed(4),n,a});return orig.apply(S,a);};}
 
   // ---------- 叠加层：字幕、按键、倍速 ----------
-  const css=`#rec-cap{position:fixed;left:50%;bottom:118px;transform:translateX(-50%);max-width:70%;padding:12px 30px;border-radius:18px;background:rgba(24,46,41,.78);color:#fff;font-size:38px;line-height:1.45;font-weight:600;letter-spacing:.04em;text-align:center;z-index:60;box-shadow:0 8px 30px rgba(0,0,0,.18)}
+  const css=`#rec-cap{position:fixed;left:50%;bottom:76px;transform:translateX(-50%);max-width:70%;padding:8px 22px;border-radius:14px;background:rgba(24,46,41,.78);color:#fff;font-size:26px;line-height:1.45;font-weight:600;letter-spacing:.04em;text-align:center;z-index:60;box-shadow:0 8px 30px rgba(0,0,0,.18)}
   #rec-cap b{color:#ffd879}#rec-cap[hidden]{display:none}
-  #rec-keys{position:fixed;right:34px;bottom:34px;display:grid;grid-template-columns:repeat(3,64px);grid-template-rows:64px 64px 52px;gap:8px;z-index:60}
-  #rec-keys i{font-style:normal;display:grid;place-items:center;border-radius:12px;background:rgba(255,252,244,.72);color:#24413c;font:700 24px/1 system-ui,sans-serif;box-shadow:0 4px 0 rgba(36,65,60,.25);transition:none}
+  #rec-keys{position:fixed;right:22px;bottom:22px;display:grid;grid-template-columns:repeat(3,44px);grid-template-rows:44px 44px 36px;gap:6px;z-index:60}
+  #rec-keys i{font-style:normal;display:grid;place-items:center;border-radius:9px;background:rgba(255,252,244,.72);color:#24413c;font:700 17px/1 system-ui,sans-serif;box-shadow:0 4px 0 rgba(36,65,60,.25);transition:none}
   #rec-keys i.on{background:#3fae8a;color:#fff;transform:translateY(3px);box-shadow:0 1px 0 rgba(36,65,60,.35)}
   #rec-keys .w{grid-column:2}#rec-keys .a{grid-column:1;grid-row:2}#rec-keys .s{grid-column:2;grid-row:2}#rec-keys .d{grid-column:3;grid-row:2}
-  #rec-keys .sp{grid-column:1/3;grid-row:3;font-size:18px}#rec-keys .e{grid-column:3;grid-row:3;font-size:20px}#rec-keys .f{grid-column:3;grid-row:1;font-size:20px}
-  #rec-speed{position:fixed;left:24px;top:96px;padding:6px 16px;border-radius:999px;background:rgba(24,46,41,.78);color:#fff;font:700 26px/1.2 system-ui,sans-serif;z-index:60}#rec-speed[hidden],#rec-keys[hidden]{display:none}
+  #rec-keys .sp{grid-column:1/3;grid-row:3;font-size:13px}#rec-keys .e{grid-column:3;grid-row:3;font-size:15px}#rec-keys .f{grid-column:3;grid-row:1;font-size:15px}
+  #rec-speed{position:fixed;left:16px;top:72px;padding:4px 12px;border-radius:999px;background:rgba(24,46,41,.78);color:#fff;font:700 18px/1.2 system-ui,sans-serif;z-index:60}#rec-speed[hidden],#rec-keys[hidden]{display:none}
   #rec-black{position:fixed;inset:0;background:#fffaf0;opacity:0;z-index:70;pointer-events:none}`;
   const st=document.createElement('style');st.textContent=css;document.head.append(st);
   const cap=document.createElement('div');cap.id='rec-cap';cap.hidden=true;document.body.append(cap);
@@ -97,7 +97,7 @@
     skip(gameSec){capturing=false;let used=0;while(used<gameSec-1e-9){if(cur)used+=sub();else{step(1/60);used+=1/60;}}
       vnow+=used*1000;runTimers();advanceAnims(used*1000);return {busy:!!cur};},
     skipRoute(){capturing=false;let used=0;while(cur){used+=sub();}vnow+=used*1000;runTimers();advanceAnims(used*1000);const P=Q.player;Q.cam.focus.set(P.x,P.y+1.1,P.z);return used;},
-    caption(html){if(!html){cap.hidden=true;return;}cap.innerHTML=html;cap.hidden=false;},
+    caption(html,pos){if(!html){cap.hidden=true;return;}cap.innerHTML=html;cap.hidden=false;cap.style.left=pos==='right'?'66%':'';cap.style.maxWidth=pos==='right'?'58%':'';},
     keys(on){keysEl.hidden=!on;},
     keyF(on){keysEl.querySelector('.f').style.visibility=on?'':'hidden';},
     speed(x){speedEl.hidden=!(x>1);speedEl.textContent='▶▶ ×'+x;},
