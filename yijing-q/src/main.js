@@ -238,7 +238,7 @@ function render(dt){
 function resize(){const r=stage.getBoundingClientRect();renderer.setSize(r.width,r.height,false);camera.aspect=r.width/Math.max(1,r.height);camera.updateProjectionMatrix();}
 addEventListener('resize',resize);
 function frame(){
-  requestAnimationFrame(frame);const dt=Math.min(clock.getDelta(),.1);
+  requestAnimationFrame(frame);if(window.__Q?.manual){clock.getDelta();return;}/* 录制模式：由录制脚本逐帧推进与渲染 */const dt=Math.min(clock.getDelta(),.1);
   if(game.mode!=='end'){acc+=dt;let n=0;while(acc>=FIXED&&n<16){step(FIXED);acc-=FIXED;n++;}if(n===16)acc=0;}
   if(game.mode==='title'&&Math.random()<dt*.25)mascot.cheer();
   render(dt);updateHud();
@@ -259,6 +259,6 @@ window.__Q={
   step(seconds,{keys:k=[],jump=false,move=null,draw=true}={}){k.forEach(c=>keys.add(c));testMove=move;let first=true;for(let t=0;t<seconds-1e-9;t+=FIXED){if(first&&jump)jumpPressed=true;first=false;step(FIXED);}testMove=null;k.forEach(c=>keys.delete(c));if(draw){render(1/60);updateHud(true);}},
   jump(){jumpPressed=true;},interact,
   teleport(x,y,z){ctrl.place(x,y,z);},
-  render(){render(1/60);},
+  render(dt=1/60){render(dt);updateHud(true);},manual:false,
   ready:true,
 };
