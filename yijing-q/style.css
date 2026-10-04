@@ -130,3 +130,4 @@ body[data-level="jiji"]{background:#ffe1c6}
 #levels{width:min(440px,calc(100% - 24px))}.level-list b{white-space:nowrap}
 .level-list .glyph{width:34px;flex:none}
 @media (max-width:560px){.hud-top{flex-wrap:wrap}.hud-top nav{flex-basis:100%;justify-content:flex-end;margin-left:0}}
+#glnote{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--paper);color:var(--ink);padding:16px 22px;border-radius:16px;box-shadow:var(--shadow);z-index:60;font-size:16px;text-align:center;max-width:80%}

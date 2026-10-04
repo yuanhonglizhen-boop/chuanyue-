@@ -1,0 +1,23 @@
+/* Flex gap 回退（放在 style.css 之后）：boot.js 实测 Flex gap 不生效时给 <html> 加 .no-flexgap，这里改用子项 margin。 */
+html.no-flexgap .hud-top>*+*,html.no-flexgap .badge>*+*{margin-left:10px}
+html.no-flexgap .gems>*+*,html.no-flexgap #form>*+*{margin-left:7px}
+html.no-flexgap .hud-top nav>*+*{margin-left:6px}
+html.no-flexgap .glyph>*+*{margin-top:3px}
+html.no-flexgap .glyph.hex>*+*{margin-top:2px}
+html.no-flexgap .glyph.big>*+*{margin-top:8px}
+html.no-flexgap .glyph.big.hex>*+*{margin-top:5px}
+html.no-flexgap .glyph i>*+*{margin-left:4px}
+html.no-flexgap .glyph.big i>*+*{margin-left:10px}
+html.no-flexgap .bagua .node>*+*{margin-top:2px}
+html.no-flexgap .card>*+*{margin-top:6px}
+html.no-flexgap .stats>*+*{margin-left:28px}
+html.no-flexgap dialog h2>*+*{margin-left:16px}
+html.no-flexgap .links>*+*{margin-left:14px}
+html.no-flexgap .star-list li>*+*{margin-left:10px}
+html.no-flexgap .detail-head>*+*{margin-left:18px}
+html.no-flexgap .level-list button>*+*{margin-left:14px}
+html.no-flexgap .chapters>*,html.no-flexgap .chars>*,html.no-flexgap .modes>*{margin:3px}
+@media (max-width:760px){html.no-flexgap .hud-top>*+*{margin-left:6px}html.no-flexgap .hud-top nav>*+*{margin-left:4px}}
+/* 毛玻璃只是增强：不支持 backdrop-filter 时用更不透明的底色，保证文字可读 */
+@supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){:root{--glass:rgba(255,252,244,.94)}}
+html.no-flexgap .chars button>*+*,html.no-flexgap .modes button>*+*{margin-left:6px}

@@ -140,6 +140,7 @@ export function createAudio({offlineCtx=null}={}){/* offlineCtx：离线渲染�
     fall(){jingle([[2,0],[1,0],[0,0,2]],{spb:.09,vol:.08,tonic:392});},
     splash(){noise(.35,{vol:.2,freq:1400});},
     ui(){tone(700,760,.06,{vol:.04});},
+    setPaused(v){if(!ctx||offlineCtx)return;try{v?ctx.suspend():ctx.resume();}catch{}},
     _setClock(t){clock=t;},_tick(){schedule();},
     _level(){if(!meter)return 0;const d=new Float32Array(meter.fftSize);meter.getFloatTimeDomainData(d);let m=0;for(const v of d)m=Math.max(m,Math.abs(v));return m;},/* 总输出的峰值，用于验证静音 */
     _debug:()=>({ctx:!!ctx,themeName,layer,step:played,section:secIndex,musicGain:musicGain?musicGain.gain.value:null,musicMuted}),

@@ -16,7 +16,7 @@ const save=loadSave();
 
 // ---------- 渲染器 ----------
 const renderer=new THREE.WebGLRenderer({antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.shadowMap.enabled=true;/* 像素倍数在 resize() 里按预算设定 */renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.NoToneMapping;
 $('stage').append(renderer.domElement);
 const camera=new THREE.PerspectiveCamera(46,1,.1,600);
@@ -59,7 +59,7 @@ function loadLevel(i){
   physics=createPhysics();const rng=seeded(17+i*101);
   world=createWorld({scene,physics,renderer,rng});kit=createKit({world,physics,scene});
   hemi=new THREE.HemisphereLight(i===1?'#ffe0c4':'#e8f6ff',i===1?'#6b5a7a':'#6f8f7c',i===1?1.25:1.45);scene.add(hemi);
-  sun=new THREE.DirectionalLight(i===1?'#ffc58f':'#fff3dc',i===1?2.1:2.4);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-16,right:16,top:16,bottom:-16,near:1,far:60});sun.shadow.bias=-.0005;sun.shadow.normalBias=.04;scene.add(sun);scene.add(sun.target);
+  sun=new THREE.DirectionalLight(i===1?'#ffc58f':'#fff3dc',i===1?2.1:2.4);sun.castShadow=perf.tier<2;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-16,right:16,top:16,bottom:-16,near:1,far:60});sun.shadow.bias=-.0005;sun.shadow.normalBias=.04;scene.add(sun);scene.add(sun.target);
   scene.add(new THREE.AmbientLight('#ffffff',.18));
   envMap=world.makeEnv();game.level=null;mascot=null;spawnMascot(save.char);
   shadowBlob=new THREE.Mesh(new THREE.CircleGeometry(.5,24),new THREE.MeshBasicMaterial({color:'#1f3a36',transparent:true,opacity:.28,depthWrite:false}));shadowBlob.rotation.x=-Math.PI/2;shadowBlob.renderOrder=1;scene.add(shadowBlob);
@@ -68,7 +68,7 @@ function loadLevel(i){
     onJump:(n)=>{mascot.impulse(n===1?2.6:3.2);sfx.jump(n);if(n===2)burst(new THREE.Vector3(ctrl.p.x,ctrl.p.y+.2,ctrl.p.z),{color:'#e9fff6',n:8,speed:1.6,up:.5,life:.45,size:.3,gravity:0});},
     onLand:(col,impact,hop)=>{mascot.impulse(-Math.min(6,impact*.62));if(!hop&&impact>5){sfx.land(impact);burst(new THREE.Vector3(ctrl.p.x,ctrl.p.y+.05,ctrl.p.z),{color:'#f4ead2',n:8,speed:2,up:.8,life:.4,size:.3});}if(col.bounce){sfx.bounce();burst(new THREE.Vector3(col.x,col.top+.2,col.z),{color:'#ffffff',n:14,speed:2.5,up:1});}game.level?.onLand?.(col,impact);}});
   const ctx={world,kit,physics,scene,toast,sfx,rng,burst,get mascot(){return mascot;},get player(){return ctrl.p;},getForm:()=>game.form,setForm,openLore,unlock,challenge:game.challenge};
-  game.level=LEVELS[i](ctx);
+  game.level=LEVELS[i](ctx);world.bake();/* 静态装饰合并成少数网格 */
   const L=game.level;mascot.setTrigram(L.lines);
   ctrl.place(L.spawn.x,L.spawn.y,L.spawn.z,L.spawn.yaw);
   cam.yaw=cam.targetYaw=L.camYaw;cam.focus.set(L.spawn.x,L.spawn.y+1,L.spawn.z);
@@ -235,15 +235,26 @@ function render(dt){
   world.sky.position.copy(camera.position);
   renderer.render(scene,camera);
 }
-function resize(){const r=stage.getBoundingClientRect();renderer.setSize(r.width,r.height,false);camera.aspect=r.width/Math.max(1,r.height);camera.updateProjectionMatrix();}
+// 画质：0 = 默认（像素倍数 ≤1.5、总像素 ≤约 200 万、有阴影）；1 = 像素倍数 1；2 = 再关阴影。持续卡顿时自动逐级降档
+const perf={tier:0,acc:0,n:0,lost:0};
+function pixelRatio(w,h){const cap=perf.tier>=1?1:1.5;return Math.max(.5,Math.min(devicePixelRatio||1,cap,Math.sqrt((perf.tier>=1?1e6:2e6)/Math.max(1,w*h))));}
+function adapt(dt){if(game.mode!=='play'||perf.tier>=2)return;perf.acc+=dt;perf.n++;if(perf.acc<3)return;const avg=perf.acc/perf.n;perf.acc=0;perf.n=0;
+  if(avg>1/22){perf.tier++;if(perf.tier===1)resize();else{renderer.shadowMap.enabled=false;if(sun)sun.castShadow=false;scene.traverse(o=>{if(o.material)o.material.needsUpdate=true;});}}}
+function resize(){const r=stage.getBoundingClientRect();renderer.setPixelRatio(pixelRatio(r.width,r.height));renderer.setSize(r.width,r.height,false);camera.aspect=r.width/Math.max(1,r.height);camera.updateProjectionMatrix();}
 addEventListener('resize',resize);
 function frame(){
-  requestAnimationFrame(frame);if(window.__Q?.manual){clock.getDelta();return;}/* 录制模式：由录制脚本逐帧推进与渲染 */const dt=Math.min(clock.getDelta(),.1);
+  requestAnimationFrame(frame);if(window.__Q?.manual||document.hidden||perf.glLost){clock.getDelta();return;}/* 录制模式 / 切到后台 / 图形上下文丢失：不推进 */const dt=Math.min(clock.getDelta(),.1);adapt(dt);
   if(game.mode!=='end'){acc+=dt;let n=0;while(acc>=FIXED&&n<16){step(FIXED);acc-=FIXED;n++;}if(n===16)acc=0;}
   if(game.mode==='title'&&Math.random()<dt*.25)mascot.cheer();
   render(dt);updateHud();
 }
 
+// 切到后台：暂停声音；回来时丢掉这段时间差，不补算
+document.addEventListener('visibilitychange',()=>{sfx.setPaused(document.hidden);clock.getDelta();acc=0;});
+// 图形上下文丢失：停止渲染并提示；恢复后继续。反复丢失时不再重试，提示重新打开
+renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();perf.glLost=true;perf.lost++;
+  $('glnote').textContent=perf.lost>=3?'设备图形资源不足，请关闭后重新打开。':'画面暂停了，正在恢复……';$('glnote').hidden=false;},false);
+renderer.domElement.addEventListener('webglcontextrestored',()=>{if(perf.lost>=3)return;perf.glLost=false;$('glnote').hidden=true;clock.getDelta();},false);
 // 启动
 document.querySelectorAll('[data-char]').forEach(b=>{b.setAttribute('aria-pressed',String(b.dataset.char===save.char));});
 setChallenge(save.challenge);syncAudioButtons();

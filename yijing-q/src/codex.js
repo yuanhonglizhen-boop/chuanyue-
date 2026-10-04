@@ -50,7 +50,12 @@ export const CODEX=[
     key:'',quotes:[],noQuote:'此卡无古籍引文。',game:'可选角色。',hint:'在标题页选择鲤鲤'},
 ];
 
-// 存档：只用于本机，读写失败时游戏照常运行
+// 存档：只用于本机，读写失败时游戏照常运行。
+// 在小红书小工具里，启动脚本（minitool/boot.js）会先用容器的 Storage 读出存档放进 window.__YQ_SAVE_JSON，
+// 写存档时同时写容器 Storage（9.46+）与浏览器本地存储；普通网页里这两项都不存在，只用浏览器本地存储。
 const KEY='yijing-q-save-v1';
-export function loadSave(){try{const s=JSON.parse(localStorage.getItem(KEY)||'{}');return {codex:s.codex||['c-yao'],stars:s.stars||{},best:s.best||{},char:s.char||'yao',challenge:!!s.challenge,music:s.music!==false,sfx:s.sfx!==false};}catch{return {codex:['c-yao'],stars:{},best:{},char:'yao',challenge:false,music:true,sfx:true};}}
-export function writeSave(s){try{localStorage.setItem(KEY,JSON.stringify(s));}catch{}}
+function readRaw(){if(typeof window!=='undefined'&&typeof window.__YQ_SAVE_JSON==='string')return window.__YQ_SAVE_JSON;try{return localStorage.getItem(KEY);}catch{return null;}}
+export function loadSave(){try{const s=JSON.parse(readRaw()||'{}');return {codex:s.codex||['c-yao'],stars:s.stars||{},best:s.best||{},char:s.char||'yao',challenge:!!s.challenge,music:s.music!==false,sfx:s.sfx!==false};}catch{return {codex:['c-yao'],stars:{},best:{},char:'yao',challenge:false,music:true,sfx:true};}}
+export function writeSave(s){let json;try{json=JSON.stringify(s);}catch{return;}
+  if(typeof window!=='undefined'){window.__YQ_SAVE_JSON=json;const store=window.__YQ_STORE;if(store){try{const r=store.setStorage({key:KEY,data:json});if(r&&r.catch)r.catch(()=>{});}catch{}}}
+  try{localStorage.setItem(KEY,json);}catch{}}

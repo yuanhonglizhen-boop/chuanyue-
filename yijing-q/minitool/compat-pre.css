@@ -1,0 +1,16 @@
+/* Chrome 61 基线层（放在 style.css 之前）：style.css 里 inset / min() / max() / clamp() / env() / aspect-ratio / 网格 gap
+   在旧内核上会被整条丢弃，这里先给出等效的旧写法；新内核上 style.css 的同名声明会覆盖这些值。 */
+#stage,#loading,#fade,#title,#end,#clear{top:0;right:0;bottom:0;left:0}
+.hud-top{top:12px}
+.objective{bottom:14px;max-width:calc(100% - 24px)}
+@media (min-width:464px){.objective{max-width:440px}}
+#card h2{font-size:42px}
+h1{font-size:52px}
+.bagua{width:78vw;max-width:300px;height:78vw;max-height:300px}
+dialog{max-width:calc(100% - 24px)}
+@media (min-width:584px){dialog{max-width:560px}}
+dialog.wide{max-width:calc(100% - 24px)}
+@media (min-width:744px){dialog.wide{max-width:720px}}
+.clear-box{width:100%;max-width:380px}
+#levels{width:calc(100% - 24px);max-width:440px}
+.star-list{grid-gap:6px}.cards{grid-gap:8px}.level-list{grid-gap:8px}

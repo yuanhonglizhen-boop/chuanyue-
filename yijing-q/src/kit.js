@@ -51,7 +51,7 @@ export function createKit({world,physics,scene}){
   function gate({x,z,top,lines,facing=0}){
     const g=new THREE.Group();g.position.set(x,top,z);g.rotation.y=facing;root.add(g);
     const stone=toon('#d9d2bd'),dark=toon('#55807a'),red=toon('#c85b46');
-    for(const s of [-1,1]){mesh(new THREE.CylinderGeometry(.32,.38,3.6,10),red,s*1.8,1.8,0,g);mesh(new THREE.CylinderGeometry(.5,.55,.35,10),stone,s*1.8,.17,0,g);
+    for(const s of [-1,1]){world.markStatic(mesh(new THREE.CylinderGeometry(.32,.38,3.6,10),red,s*1.8,1.8,0,g));world.markStatic(mesh(new THREE.CylinderGeometry(.5,.55,.35,10),stone,s*1.8,.17,0,g));
       physics.add({kind:'cyl',x:x+Math.cos(facing)*s*1.8,z:z-Math.sin(facing)*s*1.8,r:.42,top:top+3.6,bottom:top-1,safe:false});}
     const lintel=mesh(new THREE.BoxGeometry(4.9,.42,.6),dark,0,3.75,0,g);mesh(new THREE.BoxGeometry(5.4,.18,.9),dark,0,4.05,0,g);
     const sign=new THREE.Group();sign.position.set(0,4.7,0);g.add(sign);mesh(new THREE.BoxGeometry(1.3,1.1,.12),stone,0,0,0,sign);
@@ -70,8 +70,8 @@ export function createKit({world,physics,scene}){
   // 石碑：刻着卦象，按 E 阅读考据
   function stele({x,z,top,lines,facing=0}){
     const g=new THREE.Group();g.position.set(x,top,z);g.rotation.y=facing;root.add(g);
-    mesh(new THREE.BoxGeometry(1.5,.3,.8),toon('#b8b29d'),0,.15,0,g);const slab=mesh(new THREE.BoxGeometry(1.2,2,.32),toon('#d6d0bb'),0,1.25,0,g);
-    mesh(new THREE.BoxGeometry(1.4,.22,.45),toon('#55807a'),0,2.32,0,g);
+    world.markStatic(mesh(new THREE.BoxGeometry(1.5,.3,.8),toon('#b8b29d'),0,.15,0,g));const slab=world.markStatic(mesh(new THREE.BoxGeometry(1.2,2,.32),toon('#d6d0bb'),0,1.25,0,g));
+    world.markStatic(mesh(new THREE.BoxGeometry(1.4,.22,.45),toon('#55807a'),0,2.32,0,g));
     lines.forEach((yang,i)=>{const b=yaoBar(yang,{w:.75,h:.11,d:.05,color:'#3d5f5a'});b.position.set(0,.85+i*.25,.17);g.add(b);});
     physics.add({kind:'box',x,z,hw:.75,hd:.4,rot:facing,top:top+2.4,bottom:top-1,safe:false});
     return {group:g,pos:new THREE.Vector3(x,top,z)};
