@@ -99,6 +99,7 @@
     skipRoute(){capturing=false;let used=0;while(cur){used+=sub();}vnow+=used*1000;runTimers();advanceAnims(used*1000);const P=Q.player;Q.cam.focus.set(P.x,P.y+1.1,P.z);return used;},
     caption(html){if(!html){cap.hidden=true;return;}cap.innerHTML=html;cap.hidden=false;},
     keys(on){keysEl.hidden=!on;},
+    keyF(on){keysEl.querySelector('.f').style.visibility=on?'':'hidden';},
     speed(x){speedEl.hidden=!(x>1);speedEl.textContent='▶▶ ×'+x;},
     fade(v){black.style.opacity=v;},
     autoCam(v){autoCam=v;},

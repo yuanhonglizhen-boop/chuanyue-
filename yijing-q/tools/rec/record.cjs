@@ -55,15 +55,15 @@ const hold=yang=>`Q.level.held&&Q.level.held.yang===${yang}`;
   if(!stop('title')){
   // ================= 第一境 · 坎 =================
   await section('kan');
-  await ev(()=>{__Q.start(0);__R.keys(true);__R.snapCam(0,.42,9);});
+  await ev(()=>{__Q.start(0);__R.keys(true);__R.keyF(false);__R.snapCam(0,.42,9);});
   await play(2.4);
   await cap('<b>WASD</b> 移动，走路会自己蹦');
   await go([{x:2.1,z:2.9}]);
   await cap('靠近石碑按 <b>E</b>，看这一关要排的卦');await play(.5);
-  await ev(()=>__R.interact());await play(4.6);await closeDlg();
+  await ev(()=>__R.interact());await play(.4);await cap(null);await play(4.2);await closeDlg();
   await cap('<b>空格</b>跳，空中再按一次是二段跳');
   await go([{x:1.8,z:.8},{x:6.2,z:-2.7},{x:8.4,z:-3.6,jump:true},{x:9.9,z:-5.3,jump:true},{x:12.3,z:-7.4,jump:true},{x:14.3,z:-9.4}]);
-  await cap('一路收集<b>爻玉</b>，凑够三枚，终点的卦门才会亮');await play(1.2);
+  await cap('<b>爻玉</b>一共 6 枚：拿到 3 枚，卦门就会亮；全收齐多一颗星');await play(2.2);
   await cut([{x:11,z:-6.6},{x:9.9,z:-5.3,jump:true},{x:8.4,z:-3.6,jump:true},{x:6,z:-2.6,jump:true},{x:4.4,z:-1.1}]);
   await ev(()=>__R.snapCam(Math.PI*0.05,.42,9));
   await speed(2);await go([{x:-.9,z:-6.2},{x:-1.2,z:-8.4,jump:true},{x:.9,z:-10.6,jump:true,tol:.6},{x:-.4,z:-12.8,jump:true},{x:-.2,z:-15,jump:true},{x:-3.6,z:-15.8}],2);await speed(1);
@@ -82,7 +82,7 @@ const hold=yang=>`Q.level.held&&Q.level.held.yang===${yang}`;
   await section('li');
   await ev(()=>__R.snapCam(0,.42,9));await play(2.4);
   await cap('第二境先读碑：离卦是 阳·阴·阳');
-  await go([{x:-2.2,z:-1.1}]);await ev(()=>__R.interact());await play(4.4);await closeDlg();
+  await go([{x:-2.2,z:-1.1}]);await ev(()=>__R.interact());await cap(null);await play(4.4);await closeDlg();
   await cap('到<b>火塘</b>取火种，火种会慢慢烧完，得赶快');
   await go([{x:0,z:-.2,until:'Q.level.carry>0'}]);await play(.6);
   await speed(2);await go([{x:3,z:1.2},{x:5.4,z:-.9},{x:7.6,z:-1.9},{x:10.2,z:-2.8},{x:11.3,z:-1.8}],2);await speed(1);
@@ -107,7 +107,7 @@ const hold=yang=>`Q.level.held&&Q.level.held.yang===${yang}`;
   await section('jiji');
   await ev(()=>__R.snapCam(0,.42,9));await play(2.4);
   await cap('第三境：把六个爻块放回原位，排成「既济」');
-  await go([{x:2.3,z:14.9}]);await ev(()=>__R.interact());await play(4.4);await closeDlg();
+  await go([{x:2.3,z:14.9}]);await ev(()=>__R.interact());await cap(null);await play(4.4);await closeDlg();await ev(()=>__R.keyF(true));
   await cap('按 <b>F</b> 变身：原形 → 水态 → 火态');
   await go([{x:0,z:6},{x:7.6,z:-1.1}]);
   await cap('<b>水态</b>能穿过火墙');
@@ -165,10 +165,10 @@ const hold=yang=>`Q.level.held&&Q.level.held.yang===${yang}`;
   await section('end');
   await ev(()=>__R.keys(false));
   await cap('三境通关，八卦方位图上点亮坎、离');await play(4);
-  await cap('一路读到的卦和知识，都收进<b>图鉴</b>');
-  await ev(()=>{document.getElementById('end').hidden=true;__Q.openCodex();});await play(2.4);
+  await cap('一路读到的卦和知识，都收进<b>图鉴</b>');await play(2);
+  await ev(()=>{document.getElementById('end').hidden=true;__Q.openCodex();});await cap(null);await play(2.4);
   await ev(()=>document.querySelector('[data-card="jiji"]').click());await play(3.6);
-  await cap(null);await play(.6);
+  await play(.6);
   }}}}
   }catch(e){if(!(e instanceof Stop))throw e;console.log('到达 MAXSEC，停止');}
   // ---------- 结束：导出声音事件 ----------
