@@ -41,6 +41,28 @@ async function open(b,{init='',label}){const ctx=await b.newContext(phone);await
       check('存档：刷新后从容器 Storage 读回（浏览器本地存储已清空）',await p.evaluate(()=>__Q.save.char==='koi'));
       check('不联网：没有发出任何网络请求',reqs.length===0,reqs);
       check('无运行时错误',errs.length===0,errs);await ctx.close();}
+    // 1b. 横屏模式（小红书锁竖屏，靠页面整体旋转）：摇杆、镜头方向正确，弹窗居中完整，选择写入存档
+    {const {ctx,p,errs}=await open(b,{init:fakeXhs});await p.waitForFunction(()=>window.__Q&&window.__Q.ready,null,{timeout:180000});
+      await p.tap('#btn-orient');const cls=await p.evaluate(()=>document.documentElement.className);
+      await p.screenshot({path:path.join(out,'06-land-title.png')});
+      await p.tap('#btn-start');await p.evaluate(()=>{__Q.manual=true;__Q.step(.5,{draw:false});});
+      const jb=await p.locator('#joystick').boundingBox(),cdp=await ctx.newCDPSession(p),cx=jb.x+jb.width/2,cy=jb.y+jb.height/2;
+      const z0=await p.evaluate(()=>__Q.player.z);
+      await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:cx,y:cy,id:1}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:cx+50,y:cy,id:1}]});
+      await p.evaluate(()=>__Q.step(.6,{draw:false}));await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+      const fwd=await p.evaluate(z0=>z0-__Q.player.z,z0);
+      const y0=await p.evaluate(()=>__Q.cam.targetYaw);
+      await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:195,y:650,id:2}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:195,y:710,id:2}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+      const dyaw=await p.evaluate(y0=>__Q.cam.targetYaw-y0,y0);
+      check('横屏模式：页面整体旋转；手指往"上"推摇杆向前走，往"右"拖镜头右转（与竖屏手感一致）',/\bland\b/.test(cls)&&fwd>1&&dyaw<0,{cls,fwd:+fwd.toFixed(2),dyaw:+dyaw.toFixed(3)});
+      await p.evaluate(()=>{__Q.step(.1);document.getElementById('btn-lore').click();});await p.waitForTimeout(300);
+      const lr=await p.evaluate(()=>{const r=document.getElementById('lore').getBoundingClientRect();return {l:r.left,t:r.top,r:r.right,b:r.bottom,W:innerWidth,H:innerHeight};});
+      await p.screenshot({path:path.join(out,'07-land-lore.png')});
+      check('横屏模式：碑文弹窗居中、完整在屏幕内',lr.l>=0&&lr.t>=0&&lr.r<=lr.W&&lr.b<=lr.H&&Math.abs((lr.l+lr.r)/2-lr.W/2)<2,lr);
+      await p.evaluate(()=>document.getElementById('lore').close());
+      const saved=await p.evaluate(()=>JSON.parse(window.__store['yijing-q-save-v1']||'{}').land);
+      check('横屏模式：选择写入存档，下次打开保持',saved===true,{saved});
+      check('横屏模式：无运行时错误',errs.length===0,errs);await ctx.close();}
     // 2. 没有容器（普通浏览器 / 低版本）：退回浏览器本地存储
     {const {ctx,p,errs}=await open(b,{});await p.waitForFunction(()=>window.__Q&&window.__Q.ready,null,{timeout:180000});
       await p.evaluate(()=>__Q.selectCharacter('lin'));const ls=await p.evaluate(()=>JSON.parse(localStorage.getItem('yijing-q-save-v1')||'{}').char);

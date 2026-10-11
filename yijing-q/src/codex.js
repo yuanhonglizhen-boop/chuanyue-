@@ -55,7 +55,7 @@ export const CODEX=[
 // 写存档时同时写容器 Storage（9.46+）与浏览器本地存储；普通网页里这两项都不存在，只用浏览器本地存储。
 const KEY='yijing-q-save-v1';
 function readRaw(){if(typeof window!=='undefined'&&typeof window.__YQ_SAVE_JSON==='string')return window.__YQ_SAVE_JSON;try{return localStorage.getItem(KEY);}catch{return null;}}
-export function loadSave(){try{const s=JSON.parse(readRaw()||'{}');return {codex:s.codex||['c-yao'],stars:s.stars||{},best:s.best||{},char:s.char||'yao',challenge:!!s.challenge,music:s.music!==false,sfx:s.sfx!==false};}catch{return {codex:['c-yao'],stars:{},best:{},char:'yao',challenge:false,music:true,sfx:true};}}
+export function loadSave(){try{const s=JSON.parse(readRaw()||'{}');return {codex:s.codex||['c-yao'],stars:s.stars||{},best:s.best||{},char:s.char||'yao',challenge:!!s.challenge,music:s.music!==false,sfx:s.sfx!==false,land:!!s.land};}catch{return {codex:['c-yao'],stars:{},best:{},char:'yao',challenge:false,music:true,sfx:true,land:false};}}
 export function writeSave(s){let json;try{json=JSON.stringify(s);}catch{return;}
   if(typeof window!=='undefined'){window.__YQ_SAVE_JSON=json;const store=window.__YQ_STORE;if(store){try{const r=store.setStorage({key:KEY,data:json});if(r&&r.catch)r.catch(()=>{});}catch{}}}
   try{localStorage.setItem(KEY,json);}catch{}}

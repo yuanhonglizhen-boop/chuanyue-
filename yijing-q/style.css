@@ -131,3 +131,50 @@ body[data-level="jiji"]{background:#ffe1c6}
 .level-list .glyph{width:34px;flex:none}
 @media (max-width:560px){.hud-top{flex-wrap:wrap}.hud-top nav{flex-basis:100%;justify-content:flex-end;margin-left:0}}
 #glnote{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--paper);color:var(--ink);padding:16px 22px;border-radius:16px;box-shadow:var(--shadow);z-index:60;font-size:16px;text-align:center;max-width:80%}
+
+/* ---------- 横屏 ---------- */
+/* 切换按钮只在触屏设备上出现 */
+.orient{display:none}
+@media (pointer:coarse){.orient{display:inline-block}}
+.orient-pill{border:1.5px solid var(--jade);background:#fff;color:var(--jade);border-radius:999px;padding:4px 14px;font-size:13px;font-weight:700}
+/* html.land：整页已由脚本顺时针转 90°。对话框在浏览器的顶层单独绘制，不跟着页面转，这里单独转，并按横屏可视尺寸限宽限高 */
+/* 先按横屏的可视尺寸定宽高（自身宽 ≤ 屏幕长边，自身高 ≤ 屏幕短边），再绕屏幕中心转 90° */
+html.land dialog[open]{position:fixed;left:50%;top:50%;margin:0;transform:translate(-50%,-50%) rotate(90deg)}
+html.land dialog{width:min(560px,calc(var(--sh,100vh) - 24px));max-width:none;max-height:calc(var(--sw,100vw) - 24px);overflow:auto;padding:18px 24px}
+html.land dialog.wide{width:min(720px,calc(var(--sh,100vh) - 24px))}
+html.land #levels{width:min(440px,calc(var(--sh,100vh) - 24px))}
+/* html.landui：横屏布局（假横屏，或浏览器里真的横着、且高度很矮时） */
+html.landui #title{place-items:center start;padding:10px 0 10px 4%;background:linear-gradient(90deg,rgba(223,241,234,.75) 0,rgba(223,241,234,.4) 55%,transparent 75%)}
+html.landui .title-box{display:grid;grid-template-columns:1.05fr 1fr;grid-column-gap:22px;align-items:start;max-width:none;width:min(700px,70%);max-height:100%;overflow:auto;padding:16px 22px;text-align:left}
+html.landui .title-box>*{grid-column:1}
+html.landui .title-box .eyebrow{grid-row:1}html.landui .title-box h1{grid-row:2;font-size:40px;margin:4px 0}html.landui .title-box .lead{grid-row:3;margin:0 0 12px;font-size:14px}
+html.landui #btn-start{grid-row:4;justify-self:start}
+html.landui .chapters-label{grid-row:5;text-align:left;margin:10px 0 0}html.landui .chapters{grid-row:6;justify-content:flex-start;margin:6px 0 0}
+html.landui .title-box>.pick:nth-of-type(1){grid-column:2;grid-row:1/4;margin:0 0 6px}
+html.landui .title-box>.pick:nth-of-type(2){grid-column:2;grid-row:4/6;margin:0}
+html.landui .title-box .keys{display:none}
+html.landui .title-box .links{grid-column:2;grid-row:6;justify-content:flex-start;align-items:center;margin-top:6px}
+html.landui .chars button{min-width:0;flex:1 1 40%;padding:6px 4px;font-size:13px}
+/* 顶栏一行、按钮小一些；目标提示一行，点开再看全 */
+html.landui .hud-top{top:8px;left:12px;right:12px;flex-wrap:nowrap;gap:6px}
+html.landui .hud-top nav{flex-basis:auto;margin-left:auto;gap:4px}
+html.landui .hud-top nav button{width:32px;height:32px;font-size:14px;border-radius:11px}
+html.landui .badge{padding:6px 10px}html.landui .badge small,html.landui .badge #level-glyph{display:none}html.landui .badge strong{font-size:14px}
+html.landui .gems{padding:7px 10px}
+html.landui .objective{bottom:8px;max-width:44%;padding:6px 10px;cursor:pointer}
+html.landui .objective p{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.landui .objective.open p{white-space:normal}
+html.landui #toast{top:56px}
+html.landui #prompt{bottom:96px}
+@media (pointer:coarse){
+  html.landui #joystick{left:30px;bottom:34px;width:112px;height:112px}html.landui #knob{left:31px;top:31px}
+  html.landui #btn-jump{right:30px;bottom:34px;width:78px;height:78px}
+  html.landui #btn-act{right:124px;bottom:44px;width:56px;height:56px}
+  html.landui body.forms #btn-form{right:40px;bottom:128px;width:52px;height:52px}
+  html.landui .objective{left:50%;transform:translateX(-50%);bottom:8px}
+}
+/* 结算、结局：横屏高度矮，框内可滚动，八卦图缩小 */
+html.landui .clear-box,html.landui .end-box{max-height:calc(100% - 4px);overflow:auto;padding:14px 22px}
+html.landui .bagua{width:200px;height:200px}
+html.landui .end-box h2{margin:4px 0 8px;font-size:20px}
+html.landui #card h2{font-size:34px}

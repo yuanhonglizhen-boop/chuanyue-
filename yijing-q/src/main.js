@@ -94,13 +94,30 @@ function inputVector(){
   const s=Math.sin(cam.yaw),c=Math.cos(cam.yaw);return {x:x*c+z*s,z:-x*s+z*c};
 }
 const stage=$('stage');let drag=null;
+// ---------- 横屏模式 ----------
+// 小红书小工具锁竖屏。打开「横屏」后整页顺时针转 90°：玩家把手机逆时针横握（充电口在右手边）时画面是正的。
+// 屏幕坐标 (X,Y) 与页面坐标 (x,y) 的关系：X = 屏宽 - y，Y = x。所以手指移动 (dX,dY) 对应页面里的 (dY,-dX)。
+const landMQ=window.matchMedia?matchMedia('(orientation: landscape) and (max-height: 540px)'):null;
+const toLocal=(dx,dy)=>save.land?{x:dy,y:-dx}:{x:dx,y:dy};
+function applyOrientation(){
+  const de=document.documentElement,b=document.body,W=innerWidth,H=innerHeight;
+  de.classList.toggle('land',!!save.land);de.classList.toggle('landui',!!save.land||!!(landMQ&&landMQ.matches));
+  de.style.setProperty('--sw',W+'px');de.style.setProperty('--sh',H+'px');
+  if(save.land){Object.assign(b.style,{position:'fixed',left:'0',top:'0',width:H+'px',height:W+'px',transformOrigin:'0 0',transform:'translateX('+W+'px) rotate(90deg)'});}
+  else{for(const k of ['position','left','top','width','height','transformOrigin','transform'])b.style[k]='';}
+  const label=save.land?'⇋ 竖屏玩':'⇋ 横屏玩';$('btn-orient').textContent=label;$('btn-orient2').title=save.land?'切回竖屏':'切换横屏';
+  resize();
+}
+function setLand(v){save.land=!!v;persist();applyOrientation();if(game.mode==='title')framing();sfx.ui();}
+$('btn-orient').onclick=()=>setLand(!save.land);$('btn-orient2').onclick=()=>setLand(!save.land);
+if(landMQ&&landMQ.addListener)landMQ.addListener(()=>applyOrientation());
 const capture=(el,id)=>{try{el.setPointerCapture(id);}catch{}};// 个别浏览器/合成事件下会抛错，不影响操作
-stage.addEventListener('pointerdown',e=>{if(game.mode!=='play')return;if(e.pointerType==='touch'&&e.clientX<innerWidth*.45)return;drag={id:e.pointerId,x:e.clientX,y:e.clientY};capture(stage,e.pointerId);});
-stage.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;cam.targetYaw-=(e.clientX-drag.x)*.006;cam.targetPitch=THREE.MathUtils.clamp(cam.targetPitch+(e.clientY-drag.y)*.004,.12,1.25);drag.x=e.clientX;drag.y=e.clientY;});
+stage.addEventListener('pointerdown',e=>{if(game.mode!=='play')return;if(e.pointerType==='touch'&&(save.land?e.clientY/innerHeight:e.clientX/innerWidth)<.45)return;/* 左侧留给摇杆 */drag={id:e.pointerId,x:e.clientX,y:e.clientY};capture(stage,e.pointerId);});
+stage.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;const d=toLocal(e.clientX-drag.x,e.clientY-drag.y);cam.targetYaw-=d.x*.006;cam.targetPitch=THREE.MathUtils.clamp(cam.targetPitch+d.y*.004,.12,1.25);drag.x=e.clientX;drag.y=e.clientY;});
 stage.addEventListener('pointerup',()=>drag=null);stage.addEventListener('pointercancel',()=>drag=null);
 stage.addEventListener('wheel',e=>{if(game.mode!=='play')return;cam.targetDist=THREE.MathUtils.clamp(cam.targetDist+e.deltaY*.01,5,18);e.preventDefault();},{passive:false});
 const pad=$('joystick'),knob=$('knob');let padId=null,padCenter={x:0,y:0};
-function padMove(e){const dx=e.clientX-padCenter.x,dy=e.clientY-padCenter.y,l=Math.hypot(dx,dy),m=48,k=Math.min(1,l/m);const nx=l?dx/l*k:0,ny=l?dy/l*k:0;joy.x=nx;joy.z=ny;joy.active=true;knob.style.transform=`translate(${nx*m}px,${ny*m}px)`;}
+function padMove(e){const d=toLocal(e.clientX-padCenter.x,e.clientY-padCenter.y),dx=d.x,dy=d.y,l=Math.hypot(dx,dy),m=48,k=Math.min(1,l/m);const nx=l?dx/l*k:0,ny=l?dy/l*k:0;joy.x=nx;joy.z=ny;joy.active=true;knob.style.transform=`translate(${nx*m}px,${ny*m}px)`;}
 pad.addEventListener('pointerdown',e=>{padId=e.pointerId;const r=pad.getBoundingClientRect();padCenter={x:r.left+r.width/2,y:r.top+r.height/2};capture(pad,e.pointerId);padMove(e);});
 pad.addEventListener('pointermove',e=>{if(e.pointerId===padId)padMove(e);});
 const padEnd=()=>{padId=null;joy.active=false;joy.x=joy.z=0;knob.style.transform='';};pad.addEventListener('pointerup',padEnd);pad.addEventListener('pointercancel',padEnd);
@@ -221,7 +238,7 @@ function step(dt){
   mascot.update(dt,{vel:new THREE.Vector3(p.vx,p.vy,p.vz),grounded:p.grounded,yaw:p.yaw});
 }
 // 标题页：镜头靠近角色，画面偏移，让角色站在标题框旁边
-function framing(){const L=game.level;ctrl.place(L.spawn.x,L.spawn.y,L.spawn.z,0);const narrow=innerWidth<=760;cam.targetYaw=cam.yaw=.25;cam.targetPitch=cam.pitch=narrow?.22:.16;cam.targetDist=cam.dist=narrow?7.5:4.4;/* 手机竖屏：拉远一些，角色站在标题框上方 */cam.focus.set(L.spawn.x,L.spawn.y+.75,L.spawn.z);}
+function framing(){const L=game.level;ctrl.place(L.spawn.x,L.spawn.y,L.spawn.z,0);const narrow=stage.clientWidth<=760;cam.targetYaw=cam.yaw=.25;cam.targetPitch=cam.pitch=narrow?.22:.16;cam.targetDist=cam.dist=narrow?7.5:4.4;/* 手机竖屏：拉远一些，角色站在标题框上方 */cam.focus.set(L.spawn.x,L.spawn.y+.75,L.spawn.z);}
 function render(dt){
   const p=ctrl.p;
   mascot.root.position.set(p.x,p.y,p.z);mascot.root.rotation.y=game.mode==='title'?Math.sin(game.time*.6)*.35+.25:p.yaw;
@@ -230,7 +247,7 @@ function render(dt){
   if(keys.has('KeyQ'))cam.targetYaw+=dt*1.8;if(keys.has('KeyR'))cam.targetYaw-=dt*1.8;
   if(game.mode!=='title')cam.focus.lerp(new THREE.Vector3(p.x+p.vx*.25,p.y+1.1,p.z+p.vz*.25),1-Math.exp(-dt*5));
   camera.position.set(cam.focus.x+Math.sin(cam.yaw)*Math.cos(cam.pitch)*cam.dist,cam.focus.y+Math.sin(cam.pitch)*cam.dist,cam.focus.z+Math.cos(cam.yaw)*Math.cos(cam.pitch)*cam.dist);camera.lookAt(cam.focus);
-  if(game.mode==='title'){const r=stage.getBoundingClientRect(),wide=r.width>760;camera.setViewOffset(r.width,r.height,wide?-r.width*.2:0,wide?0:r.height*.3,r.width,r.height);}
+  if(game.mode==='title'){const r={width:stage.clientWidth,height:stage.clientHeight},wide=r.width>760;camera.setViewOffset(r.width,r.height,wide?-r.width*.2:0,wide?0:r.height*.3,r.width,r.height);}
   sun.position.set(p.x-12,p.y+22,p.z+8);sun.target.position.set(p.x,p.y,p.z);
   world.sky.position.copy(camera.position);
   renderer.render(scene,camera);
@@ -240,8 +257,8 @@ const perf={tier:0,acc:0,n:0,lost:0};
 function pixelRatio(w,h){const cap=perf.tier>=1?1:1.5;return Math.max(.5,Math.min(devicePixelRatio||1,cap,Math.sqrt((perf.tier>=1?1e6:2e6)/Math.max(1,w*h))));}
 function adapt(dt){if(game.mode!=='play'||perf.tier>=2)return;perf.acc+=dt;perf.n++;if(perf.acc<3)return;const avg=perf.acc/perf.n;perf.acc=0;perf.n=0;
   if(avg>1/22){perf.tier++;if(perf.tier===1)resize();else{renderer.shadowMap.enabled=false;if(sun)sun.castShadow=false;scene.traverse(o=>{if(o.material)o.material.needsUpdate=true;});}}}
-function resize(){const r=stage.getBoundingClientRect();renderer.setPixelRatio(pixelRatio(r.width,r.height));renderer.setSize(r.width,r.height,false);camera.aspect=r.width/Math.max(1,r.height);camera.updateProjectionMatrix();}
-addEventListener('resize',resize);
+function resize(){const r={width:stage.clientWidth||innerWidth,height:stage.clientHeight||innerHeight};renderer.setPixelRatio(pixelRatio(r.width,r.height));renderer.setSize(r.width,r.height,false);camera.aspect=r.width/Math.max(1,r.height);camera.updateProjectionMatrix();}
+addEventListener('resize',()=>applyOrientation());
 function frame(){
   requestAnimationFrame(frame);if(window.__Q?.manual||document.hidden||perf.glLost){clock.getDelta();return;}/* 录制模式 / 切到后台 / 图形上下文丢失：不推进 */const dt=Math.min(clock.getDelta(),.1);adapt(dt);
   if(game.mode!=='end'){acc+=dt;let n=0;while(acc>=FIXED&&n<16){step(FIXED);acc-=FIXED;n++;}if(n===16)acc=0;}
@@ -258,7 +275,9 @@ renderer.domElement.addEventListener('webglcontextrestored',()=>{if(perf.lost>=3
 // 启动
 document.querySelectorAll('[data-char]').forEach(b=>{b.setAttribute('aria-pressed',String(b.dataset.char===save.char));});
 setChallenge(save.challenge);syncAudioButtons();
-resize();showTitle();selectCharacter(save.char);frame();
+applyOrientation();showTitle();selectCharacter(save.char);frame();
+// 横屏时目标提示只显示一行，点一下展开 / 收起
+document.querySelector('.objective').addEventListener('click',e=>e.currentTarget.classList.toggle('open'));
 $('loading').hidden=true;
 // 第一次点击页面任意处即解锁声音（浏览器要求）
 addEventListener('pointerdown',()=>sfx.unlock(),{once:true});addEventListener('keydown',()=>sfx.unlock(),{once:true});
