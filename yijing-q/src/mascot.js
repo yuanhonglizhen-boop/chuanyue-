@@ -47,10 +47,14 @@ export function createMascot({envMap,kind='yao'}){
   // 肚子上的卦象：贴着表面，像玉上的刻纹 / 年糕上的红印 / 糖里的糖纹
   const barMat=new THREE.MeshBasicMaterial({color:C.trigram.color,transparent:true,opacity:C.trigram.opacity,depthWrite:false});
   const trigramGroup=new THREE.Group();{const dy=-.13,z=Math.sqrt(R*R-dy*dy)+.004;trigramGroup.position.set(0,R+dy,z);trigramGroup.rotation.x=-Math.asin(dy/R);}deco.add(trigramGroup);
-  const barGeo=new THREE.BoxGeometry(1,1,1);
+  const barGeo=new THREE.BoxGeometry(1,1,1),barFlat=barGeo.toNonIndexed(),mtx=new THREE.Matrix4(),tv=new THREE.Vector3(),tq=new THREE.Quaternion(),ts=new THREE.Vector3();
   // 三画卦或六画卦（六画时行距、粗细缩小）
-  function setTrigram(lines){trigramGroup.clear();const n=lines.length,gap=n>3?.034:.052,th=n>3?.017:.024;lines.forEach((yang,i)=>{const y=(i-(n-1)/2)*gap;const parts=yang?[[0,.17]]:[[-.054,.062],[.054,.062]];
-    for(const [x,w] of parts){const m=new THREE.Mesh(barGeo,barMat);m.scale.set(w,th,.02);m.position.set(x,y,0);m.renderOrder=4;trigramGroup.add(m);}});}
+  function setTrigram(lines){const pieces=[];const n=lines.length,gap=n>3?.034:.052,th=n>3?.017:.024;lines.forEach((yang,i)=>{const y=(i-(n-1)/2)*gap;const parts=yang?[[0,.17]]:[[-.054,.062],[.054,.062]];
+    for(const [x,w] of parts){mtx.compose(tv.set(x,y,0),tq,ts.set(w,th,.02));const g=barFlat.clone().applyMatrix4(mtx);pieces.push(g);}});
+    // 所有爻条合成一个网格（一次绘制）
+    const n2=pieces.reduce((a,g)=>a+g.attributes.position.count,0),pos=new Float32Array(n2*3),nor=new Float32Array(n2*3);let o=0;for(const g of pieces){pos.set(g.attributes.position.array,o*3);nor.set(g.attributes.normal.array,o*3);o+=g.attributes.position.count;g.dispose();}
+    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('normal',new THREE.BufferAttribute(nor,3));
+    for(const c of trigramGroup.children)c.geometry?.dispose?.();trigramGroup.clear();const m=new THREE.Mesh(geo,barMat);m.renderOrder=4;trigramGroup.add(m);}
 
   // 脸
   const face=new THREE.Group();face.position.set(0,R*1.02,0);deco.add(face);

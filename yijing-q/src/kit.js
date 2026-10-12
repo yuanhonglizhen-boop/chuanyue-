@@ -20,6 +20,12 @@ export function createKit({world,physics,scene}){
     return g;
   }
 
+  // 把一个组里所有网格（含嵌套）合成一个网格：一组卦画只占一次绘制。材质取第一个网格的
+  function flatten(group){group.updateWorldMatrix(true,true);const list=[];group.traverse(o=>{if(o.isMesh)list.push(o);});if(list.length<2)return group;
+    const m=new THREE.Mesh(world.mergeGeos(list,group),list[0].material);for(const c of [...group.children])group.remove(c);for(const o of list)o.geometry.dispose();group.add(m);return group;}
+  // 一组卦画（自下而上），合成一个网格
+  function hexBars(lines,{w=1.6,h=.22,d=.22,gap=.3,color='#fff4d2'}={}){const g=new THREE.Group();lines.forEach((y,i)=>{const b=yaoBar(y,{w,h,d,color});b.position.y=(i-(lines.length-1)/2)*gap;g.add(b);});return flatten(g);}
+
   // 爻台：踏上去在阴阳之间切换。台上方漂浮一条爻。
   function yaoAltar({x,z,top,name,yang=false,color='#e9e1c9',ring='#5bb59a'}){
     const g=new THREE.Group();g.position.set(x,top,z);root.add(g);
@@ -55,7 +61,7 @@ export function createKit({world,physics,scene}){
       physics.add({kind:'cyl',x:x+Math.cos(facing)*s*1.8,z:z-Math.sin(facing)*s*1.8,r:.42,top:top+3.6,bottom:top-1,safe:false});}
     const lintel=mesh(new THREE.BoxGeometry(4.9,.42,.6),dark,0,3.75,0,g);mesh(new THREE.BoxGeometry(5.4,.18,.9),dark,0,4.05,0,g);
     const sign=new THREE.Group();sign.position.set(0,4.7,0);g.add(sign);mesh(new THREE.BoxGeometry(1.3,1.1,.12),stone,0,0,0,sign);
-    lines.forEach((yang,i)=>{const b=yaoBar(yang,{w:.9,h:.13,d:.06,color:'#3d5f5a'});b.position.set(0,-.3+i*.3,.08);sign.add(b);});
+    {const hb=hexBars(lines,{w:.9,h:lines.length>3?.09:.13,d:.06,gap:lines.length>3?.16:.3,color:'#3d5f5a'});hb.position.set(0,lines.length>3?.1:0,.08);sign.add(hb);}
     const portalMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,uniforms:{t:{value:0},on:{value:0}},
       vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
       fragmentShader:'uniform float t;uniform float on;varying vec2 vUv;void main(){vec2 p=vUv-.5;float r=length(p)*2.;float a=atan(p.y,p.x);float swirl=sin(a*3.+r*10.-t*3.)*.5+.5;vec3 c=mix(vec3(.55,.9,.8),vec3(1.,.95,.75),swirl);float alpha=smoothstep(1.,.85,r)*(.15+on*.7)*(.6+.4*swirl);gl_FragColor=vec4(c,alpha);}'});
@@ -72,7 +78,7 @@ export function createKit({world,physics,scene}){
     const g=new THREE.Group();g.position.set(x,top,z);g.rotation.y=facing;root.add(g);
     world.markStatic(mesh(new THREE.BoxGeometry(1.5,.3,.8),toon('#b8b29d'),0,.15,0,g));const slab=world.markStatic(mesh(new THREE.BoxGeometry(1.2,2,.32),toon('#d6d0bb'),0,1.25,0,g));
     world.markStatic(mesh(new THREE.BoxGeometry(1.4,.22,.45),toon('#55807a'),0,2.32,0,g));
-    lines.forEach((yang,i)=>{const b=yaoBar(yang,{w:.75,h:.11,d:.05,color:'#3d5f5a'});b.position.set(0,.85+i*.25,.17);g.add(b);});
+    {const hb=hexBars(lines,{w:.75,h:.11,d:.05,gap:.25,color:'#3d5f5a'});hb.position.set(0,.85+(lines.length-1)*.125,.17);g.add(hb);}
     physics.add({kind:'box',x,z,hw:.75,hd:.4,rot:facing,top:top+2.4,bottom:top-1,safe:false});
     return {group:g,pos:new THREE.Vector3(x,top,z)};
   }
@@ -95,5 +101,5 @@ export function createKit({world,physics,scene}){
     return it;
   }
 
-  return {label,yaoBar,yaoAltar,gem,gate,stele,brazier};
+  return {label,yaoBar,flatten,hexBars,yaoAltar,gem,gate,stele,brazier};
 }

@@ -60,7 +60,7 @@
       </div>
       <button id="btn-start" class="primary">开始闯关 <span>→</span></button>
       <p class="pick-label chapters-label">或直接选关</p>
-      <div class="chapters"><button data-chapter="0">第一境 · 坎 <span class="stars"></span></button><button data-chapter="1">第二境 · 离 <span class="stars"></span></button><button data-chapter="2">第三境 · 既济 <span class="stars"></span></button></div>
+      <div class="chapters"><button data-chapter="0">第一境 · 坎 <span class="stars"></span></button><button data-chapter="1">第二境 · 离 <span class="stars"></span></button><button data-chapter="2">第三境 · 既济 <span class="stars"></span></button><button data-chapter="3">第四境 · 未济 <span class="stars"></span></button></div>
       <p class="keys">WASD / 方向键 移动 · 空格 跳（空中再按一次二段跳）· E 互动 · 拖动转镜头</p>
       <p class="keys keys-touch">左下摇杆 移动 · 「跳」按钮 跳（空中再按一次二段跳）· 「E」互动 · 右侧拖动转镜头</p>
       <div class="links"><button id="btn-orient" class="orient orient-pill">⇋ 横屏玩</button><button id="btn-codex-title" class="link">图鉴</button><button id="btn-about" class="link">关于考据</button></div>
@@ -79,10 +79,10 @@
 
   <section id="end" hidden>
     <div class="end-box">
-      <p class="eyebrow">三境已通</p>
-      <h2>既济之后，还有未济</h2>
+      <p class="eyebrow">四境已通</p>
+      <h2>火在水上，未济——还没有完</h2>
       <div id="end-map" class="bagua"></div>
-      <div class="stats"><div><b id="end-time">0:00</b><span>用时</span></div><div><b id="end-gems">0 / 12</b><span>爻玉</span></div><div><b id="end-stars">0 / 6</b><span>星</span></div></div>
+      <div class="stats"><div><b id="end-time">0:00</b><span>用时</span></div><div><b id="end-gems">0 / 24</b><span>爻玉</span></div><div><b id="end-stars">0 / 12</b><span>星</span></div></div>
       <p class="note">乾、坤、震、巽、艮、兑六境尚在筹备。"物不可穷也，故受之以未济终焉。"（《序卦传》）</p>
       <button id="btn-again" class="primary">回到标题</button>
     </div>
@@ -98,7 +98,7 @@
     <div id="level-list" class="level-list"></div></dialog>
   <dialog id="about"><button class="x" data-close aria-label="关闭">×</button><h2>关于考据</h2><div id="about-body"></div><button class="primary" data-close>好</button></dialog>
   <dialog id="help"><button class="x" data-close aria-label="关闭">×</button><h2>怎么玩</h2>
-    <ul class="help"><li><kbd>W A S D</kbd> / 方向键：移动（走路会自己蹦蹦跳跳）</li><li><kbd>空格</kbd>：跳；空中再按一次：二段跳</li><li><kbd>E</kbd>：读石碑、点燃或盖灭火台、拿起 / 放下爻块</li><li><kbd>F</kbd>（触屏「变」）：第三境的水火变身：原形 → 水态 → 火态</li><li>拖动画面 / <kbd>Q</kbd> <kbd>R</kbd>：转镜头；滚轮：远近</li><li>掉进水里会回到最近站稳的地方（挑战模式回到本境起点）</li><li>每境：先解开卦象，再收集至少 3 枚爻玉，卦门就会亮起</li><li>三颗星：通关、六枚爻玉全收、本境不落水</li><li>「鉴」：图鉴，收集卦象和知识卡</li></ul>
+    <ul class="help"><li><kbd>W A S D</kbd> / 方向键：移动（走路会自己蹦蹦跳跳）</li><li><kbd>空格</kbd>：跳；空中再按一次：二段跳</li><li><kbd>E</kbd>：读石碑、点燃或盖灭火台、拿起 / 放下爻块</li><li><kbd>F</kbd>（触屏「变」）：第三境的水火变身：原形 → 水态 → 火态</li><li>第四境在水下：按住 <kbd>空格</kbd>（触屏按住「跳」）往上游，松开慢慢下沉；到了九四，空中连按两下跳（或 <kbd>F</kbd> / 触屏「震」）向下猛砸</li><li>拖动画面 / <kbd>Q</kbd> <kbd>R</kbd>：转镜头；滚轮：远近</li><li>掉进水里会回到最近站稳的地方（挑战模式回到本境起点）</li><li>每境：先解开卦象，再收集至少 3 枚爻玉，卦门就会亮起</li><li>三颗星：通关、六枚爻玉全收、本境不落水</li><li>「鉴」：图鉴，收集卦象和知识卡</li></ul>
     <button class="primary" data-close>开始</button></dialog>
   <div id="glnote" role="status" hidden></div>
   <script type="module" src="src/main.js"></script>

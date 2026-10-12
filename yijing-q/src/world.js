@@ -154,7 +154,7 @@ export function createWorld({scene,physics,renderer,rng}){
     statics.length=0;}
   function update(dt,t){for(const f of updaters)f(dt,t);}
   function dispose(){scene.traverse(o=>{o.geometry?.dispose?.();});}
-  return {root,toon,mesh,bake,markStatic:st,sky,skyUniforms,makeEnv,farMountains,addClouds,water,island,stone,box,bridge,roundTree,pine,bamboo,rock,lantern,meadow,burst,update,updaters,dispose};
+  return {root,toon,mesh,bake,markStatic:st,mergeGeos,mergeChildren,sky,skyUniforms,makeEnv,farMountains,addClouds,water,island,stone,box,bridge,roundTree,pine,bamboo,rock,lantern,meadow,burst,update,updaters,dispose};
 }
 
 // 可复现的随机数

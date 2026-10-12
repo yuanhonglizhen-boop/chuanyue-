@@ -116,7 +116,7 @@ dialog.wide{max-width:min(720px,calc(100% - 24px));width:100%}
 #form i{width:16px;height:16px;border-radius:50%;background:#e9e4d4;box-shadow:inset -2px -2px 4px rgba(0,0,0,.12)}#form[data-form="water"] i{background:#86cfff}#form[data-form="fire"] i{background:#ffa45c}
 #form kbd{font-size:10px;min-width:16px}
 #btn-form{display:none}
-@media (pointer:coarse){body.forms #btn-form{display:block;position:fixed;z-index:6;right:40px;bottom:222px;width:56px;height:56px;border:0;border-radius:50%;background:#ffd9a8;box-shadow:var(--shadow);font-weight:700;font-size:17px;touch-action:none}#form kbd{display:none}}
+@media (pointer:coarse){body.slam #btn-form,body.forms #btn-form{display:block;position:fixed;z-index:6;right:40px;bottom:222px;width:56px;height:56px;border:0;border-radius:50%;background:#ffd9a8;box-shadow:var(--shadow);font-weight:700;font-size:17px;touch-action:none}#form kbd{display:none}}
 body[data-level="jiji"]{background:#ffe1c6}
 @media (max-width:560px){#form b{display:none}}
 /* 选关 */
@@ -180,7 +180,7 @@ html.landui #prompt{bottom:96px}
   html.landui #joystick{left:30px;bottom:34px;width:112px;height:112px}html.landui #knob{left:31px;top:31px}
   html.landui #btn-jump{right:30px;bottom:34px;width:78px;height:78px}
   html.landui #btn-act{right:124px;bottom:44px;width:56px;height:56px}
-  html.landui body.forms #btn-form{right:40px;bottom:128px;width:52px;height:52px}
+  html.landui body.slam #btn-form,html.landui body.forms #btn-form{right:40px;bottom:128px;width:52px;height:52px}
   html.landui .objective{left:50%;transform:translateX(-50%);bottom:8px}
 }
 /* 结算、结局：横屏高度矮，框内可滚动，八卦图缩小 */
@@ -188,3 +188,7 @@ html.landui .clear-box,html.landui .end-box{max-height:calc(100% - 4px);overflow
 html.landui .bagua{width:200px;height:200px}
 html.landui .end-box h2{margin:4px 0 8px;font-size:20px}
 html.landui #card h2{font-size:34px}
+
+/* 结局：既济、未济并排 */
+.hubhex{display:inline-flex;gap:8px}
+body.slam #btn-form{background:#a8e3f0}

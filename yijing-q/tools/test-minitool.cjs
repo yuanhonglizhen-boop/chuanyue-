@@ -32,6 +32,12 @@ async function open(b,{init='',label}){const ctx=await b.newContext(phone);await
       check('第一境：能走、能跳',r.moved>3&&r.jump>1&&r.mode==='play',r);
       check('每帧绘制次数 ≤ 100（静态装饰已合并）',r.calls<=100,{calls:r.calls});
       await p.screenshot({path:path.join(out,'02-play.png')});
+      // 第四境（水下）：按住跳上浮；六段水域里每帧绘制次数都 ≤ 100
+      const w=await p.evaluate(()=>{const Q=__Q;Q.start(3);const P=Q.player;Q.step(.5,{draw:false});const y0=P.y;Q.step(1,{up:true,draw:false});const rise=P.y-y0;const calls=[];
+        for(const [x,y,z] of [[0,0,14],[0,3,-6],[-3,5,-22],[0,0,-42],[0,0,-58],[0,0,-72],[5,15,-78]]){Q.teleport(x,y,z);Q.step(.3,{draw:false});Q.cam.focus.set(x,y+1,z);Q.render();calls.push(Q.renderer.info.render.calls);}
+        return {rise:+rise.toFixed(2),swim:P.swim!==undefined,calls,max:Math.max(...calls)};});
+      check('第四境：水下能游（按住跳上浮），六段水域每帧绘制次数都 ≤ 100',w.rise>2&&w.max<=100,w);
+      await p.screenshot({path:path.join(out,'08-weiji.png')});
       // 存档：选角色写入容器 Storage，刷新后读回
       await p.evaluate(()=>{__Q.showTitle();__Q.selectCharacter('koi');});
       const saved=await p.evaluate(()=>window.__store['yijing-q-save-v1']||null);

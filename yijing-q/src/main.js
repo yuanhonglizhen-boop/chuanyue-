@@ -6,12 +6,13 @@ import {createKit} from './kit.js';
 import {buildKan} from './levels/kan.js';
 import {buildLi} from './levels/li.js';
 import {buildJiji} from './levels/jiji.js';
+import {buildWeiji} from './levels/weiji.js';
 import {LORE,TRIGRAMS,ABOUT,WORLD_ORDER} from './lore.js';
 import {CODEX,loadSave,writeSave} from './codex.js';
 import {createAudio} from './audio.js';
 
 const $=id=>document.getElementById(id);
-const LEVELS=[buildKan,buildLi,buildJiji];const LEVEL_IDS=['kan','li','jiji'];
+const LEVELS=[buildKan,buildLi,buildJiji,buildWeiji];const LEVEL_IDS=['kan','li','jiji','weiji'];
 const save=loadSave();
 
 // ---------- 渲染器 ----------
@@ -23,8 +24,8 @@ const camera=new THREE.PerspectiveCamera(46,1,.1,600);
 const sfx=createAudio();sfx.setMuted(!save.sfx);sfx.setMusicMuted(!save.music);
 
 // ---------- 状态 ----------
-const game={mode:'title',levelIndex:0,level:null,startedAt:0,levelTime:0,gemsByLevel:[0,0,0],cleared:[false,false,false],starsRun:[null,null,null],form:'normal',time:0,toastUntil:0,lastGateHint:0,falls:0,levelFalls:0,challenge:save.challenge};
-let scene,physics,world,kit,ctrl,mascot,shadowBlob,sun,hemi,envMap;
+const game={mode:'title',levelIndex:0,level:null,startedAt:0,levelTime:0,gemsByLevel:[0,0,0,0],cleared:[false,false,false,false],starsRun:[null,null,null,null],form:'normal',time:0,toastUntil:0,lastGateHint:0,falls:0,levelFalls:0,challenge:save.challenge};
+let camBlocks=[],scene,physics,world,kit,ctrl,mascot,shadowBlob,sun,hemi,envMap;
 const cam={yaw:0,pitch:.42,dist:9,targetYaw:0,targetPitch:.42,targetDist:9,focus:new THREE.Vector3()};
 
 function toast(text,ms=3600){const el=$('toast');el.textContent=text;el.classList.add('show');game.toastUntil=performance.now()+ms;}
@@ -50,6 +51,8 @@ function selectCharacter(kind){
 // ---------- 水火变身 ----------
 const FORM_ORDER=['normal','water','fire'],FORM_NAME={normal:'原形',water:'水态',fire:'火态'};
 function setForm(f){if(!game.level?.forms)f='normal';game.form=f;mascot?.setForm(f);if(physics)physics.state.form=f;const el=$('form');el.dataset.form=f;el.querySelector('b').textContent=FORM_NAME[f];}
+// F / 触屏键：第三境变身；第四境（水下）是「震」
+function formKey(){if(game.mode!=='play')return;if(game.level.slam){if(game.level.slam(ctrl.p))ctrl.p.slamReq=true;}else cycleForm();}
 function cycleForm(){if(game.mode!=='play'||!game.level.forms)return;const f=FORM_ORDER[(FORM_ORDER.indexOf(game.form)+1)%3];setForm(f);sfx.toggle(f!=='normal');burst(new THREE.Vector3(ctrl.p.x,ctrl.p.y+.5,ctrl.p.z),{color:f==='water'?'#bfe6ff':f==='fire'?'#ffc58a':'#ffffff',n:14,speed:2,up:1.5});mascot.impulse(-2.5);}
 
 // ---------- 关卡加载 ----------
@@ -66,28 +69,29 @@ function loadLevel(i){
   ctrl=createController({physics,
     onHop:()=>{mascot.impulse(1.2);sfx.hop();},
     onJump:(n)=>{mascot.impulse(n===1?2.6:3.2);sfx.jump(n);if(n===2)burst(new THREE.Vector3(ctrl.p.x,ctrl.p.y+.2,ctrl.p.z),{color:'#e9fff6',n:8,speed:1.6,up:.5,life:.45,size:.3,gravity:0});},
+    onSlam:(col,still)=>{const p=ctrl.p;mascot.impulse(-6);sfx.thud();burst(new THREE.Vector3(p.x,p.y+.15,p.z),{color:'#e8fbff',n:18,speed:4,up:1.2,life:.6,size:.4,gravity:-1});game.level?.onSlam?.(p,col,still);},
     onLand:(col,impact,hop)=>{mascot.impulse(-Math.min(6,impact*.62));if(!hop&&impact>5){sfx.land(impact);burst(new THREE.Vector3(ctrl.p.x,ctrl.p.y+.05,ctrl.p.z),{color:'#f4ead2',n:8,speed:2,up:.8,life:.4,size:.3});}if(col.bounce){sfx.bounce();burst(new THREE.Vector3(col.x,col.top+.2,col.z),{color:'#ffffff',n:14,speed:2.5,up:1});}game.level?.onLand?.(col,impact);}});
-  const ctx={world,kit,physics,scene,toast,sfx,rng,burst,get mascot(){return mascot;},get player(){return ctrl.p;},getForm:()=>game.form,setForm,openLore,unlock,challenge:game.challenge};
-  game.level=LEVELS[i](ctx);world.bake();/* 静态装饰合并成少数网格 */
+  const ctx={world,kit,physics,scene,toast,sfx,rng,burst,lights:{hemi,sun},camera,get mascot(){return mascot;},get player(){return ctrl.p;},getForm:()=>game.form,setForm,openLore,unlock,challenge:game.challenge};
+  game.level=LEVELS[i](ctx);world.bake();camBlocks=physics.colliders.filter(c=>c.camBlock);cam.k=1;/* 静态装饰合并成少数网格 */
   const L=game.level;mascot.setTrigram(L.lines);
   ctrl.place(L.spawn.x,L.spawn.y,L.spawn.z,L.spawn.yaw);
   cam.yaw=cam.targetYaw=L.camYaw;cam.focus.set(L.spawn.x,L.spawn.y+1,L.spawn.z);
   game.levelTime=0;game.gemsByLevel[i]=0;game.levelFalls=0;game.timeLimit=game.challenge?L.timeLimit:0;
   $('level-glyph').innerHTML=glyph(L.lines);$('level-title').textContent=L.title;$('level-sub').textContent=L.subtitle;
-  document.body.dataset.level=L.id;$('timer').hidden=!game.challenge;$('form').hidden=!L.forms;document.body.classList.toggle('forms',!!L.forms);setForm('normal');
+  document.body.dataset.level=L.id;$('timer').hidden=!game.challenge;$('form').hidden=!L.forms;document.body.classList.toggle('forms',!!L.forms);document.body.classList.toggle('slam',!!L.slam);$('btn-form').textContent=L.slam?'震':'变';setForm('normal');
   if(game.mode!=='title'){sfx.playTheme(L.id);sfx.setLayer(2);}
   updateHud(true);
 }
 
 // ---------- 输入 ----------
-const keys=new Set();let jumpPressed=false;const joy={x:0,z:0,active:false};
+const keys=new Set();let jumpPressed=false,jumpHeld=false;const joy={x:0,z:0,active:false};
 addEventListener('keydown',e=>{if(e.target.closest?.('dialog'))return;keys.add(e.code);
   if((e.code==='Space'||e.code==='KeyK')&&!e.repeat){jumpPressed=true;e.preventDefault();}
   if(e.code==='KeyE'&&!e.repeat)interact();
-  if(e.code==='KeyF'&&!e.repeat)cycleForm();
+  if(e.code==='KeyF'&&!e.repeat)formKey();
   if(e.code==='Escape')closeDialogs();});
 addEventListener('keyup',e=>keys.delete(e.code));
-addEventListener('blur',()=>keys.clear());
+addEventListener('blur',()=>{keys.clear();jumpHeld=false;});
 function inputVector(){
   let x=0,z=0;if(keys.has('KeyW')||keys.has('ArrowUp'))z-=1;if(keys.has('KeyS')||keys.has('ArrowDown'))z+=1;if(keys.has('KeyA')||keys.has('ArrowLeft'))x-=1;if(keys.has('KeyD')||keys.has('ArrowRight'))x+=1;
   if(joy.active){x+=joy.x;z+=joy.z;}
@@ -121,9 +125,10 @@ function padMove(e){const d=toLocal(e.clientX-padCenter.x,e.clientY-padCenter.y)
 pad.addEventListener('pointerdown',e=>{padId=e.pointerId;const r=pad.getBoundingClientRect();padCenter={x:r.left+r.width/2,y:r.top+r.height/2};capture(pad,e.pointerId);padMove(e);});
 pad.addEventListener('pointermove',e=>{if(e.pointerId===padId)padMove(e);});
 const padEnd=()=>{padId=null;joy.active=false;joy.x=joy.z=0;knob.style.transform='';};pad.addEventListener('pointerup',padEnd);pad.addEventListener('pointercancel',padEnd);
-$('btn-jump').addEventListener('pointerdown',e=>{e.preventDefault();jumpPressed=true;});
+$('btn-jump').addEventListener('pointerdown',e=>{e.preventDefault();jumpPressed=true;jumpHeld=true;});
+for(const ev of ['pointerup','pointercancel','pointerleave'])$('btn-jump').addEventListener(ev,()=>{jumpHeld=false;});/* 水中：按住上浮 */
 $('btn-act').addEventListener('pointerdown',e=>{e.preventDefault();interact();});
-$('btn-form').addEventListener('pointerdown',e=>{e.preventDefault();cycleForm();});$('form').addEventListener('click',cycleForm);
+$('btn-form').addEventListener('pointerdown',e=>{e.preventDefault();formKey();});$('form').addEventListener('click',cycleForm);
 
 // ---------- 交互 ----------
 function nearestInteractable(){const p=ctrl.p;let best=null,bd=2.3,fallback=null;for(const it of game.level.interactables){if(it.far){fallback=it;continue;}const d=Math.hypot(p.x-it.pos.x,p.z-it.pos.z);if(d<bd&&Math.abs(p.y-it.pos.y)<2){bd=d;best=it;}}return best||fallback;}
@@ -149,11 +154,11 @@ function showCard(id){const c=CODEX.find(c=>c.id===id);
   $('codex-detail').innerHTML='<button class="back" id="codex-back">← 返回</button><div class="detail-head">'+(c.lines?glyph(c.lines,'big'+(c.lines.length>3?' hex':'')):c.char?'<i class="char-dot big char-'+c.char+'"></i>':'')+'<div><h3>'+c.title+'</h3><small>'+c.pinyin+'</small></div></div>'+
     '<p class="one">'+c.one+'</p>'+(c.key?'<p class="key">'+c.key+'</p>':'')+
     (c.quotes.length?'<ol class="quotes">'+c.quotes.map(q=>'<li><q>'+q.t+'</q><cite>'+q.s+'</cite></li>').join('')+'</ol>':'<p class="note">'+c.noQuote+'</p>')+
-    '<p class="rule">在游戏里：'+c.game+'</p>';
+    (c.noteAfter?'<p class="note">'+c.noteAfter+'</p>':'')+'<p class="rule">在游戏里：'+c.game+'</p>';
   $('codex-grid').hidden=true;$('codex-detail').hidden=false;$('codex-back').onclick=openCodex;sfx.ui();}
 $('btn-codex').onclick=openCodex;
 // 选关：随时跳到任意一境
-const LEVEL_INFO=[{lines:[0,1,0],title:'第一境 · 习坎',sub:'坎 · 水'},{lines:[1,0,1],title:'第二境 · 继明',sub:'离 · 火'},{lines:[1,0,1,0,1,0],title:'第三境 · 既济',sub:'水在火上'}];
+const LEVEL_INFO=[{lines:[0,1,0],title:'第一境 · 习坎',sub:'坎 · 水'},{lines:[1,0,1],title:'第二境 · 继明',sub:'离 · 火'},{lines:[1,0,1,0,1,0],title:'第三境 · 既济',sub:'水在火上'},{lines:[0,1,0,1,0,1],title:'第四境 · 未济',sub:'火在水上'}];
 function openLevels(){
   $('level-list').innerHTML=LEVEL_INFO.map((L,i)=>{const id=LEVEL_IDS[i],st=save.stars[id]||0,best=save.best[id];
     return '<button data-goto="'+i+'">'+glyph(L.lines)+'<span><b>'+L.title+'</b><small>'+L.sub+(best?' · 最佳 '+fmt(best):'')+'</small></span><em>'+'★'.repeat(st)+'☆'.repeat(3-st)+'</em></button>';}).join('');
@@ -175,7 +180,7 @@ document.querySelectorAll('dialog').forEach(d=>d.querySelectorAll('[data-close]'
 function setChallenge(on){game.challenge=on;save.challenge=on;persist();document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.mode==='challenge')===on)));$('mode-desc').textContent=on?'挑战：每境限时；落水回到本境起点；火种只燃 18 秒。':'普通：落水回到最近站稳处，不限时。';}
 document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{setChallenge(b.dataset.mode==='challenge');sfx.ui();});
 document.querySelectorAll('[data-char]').forEach(b=>b.onclick=()=>{sfx.unlock();selectCharacter(b.dataset.char);});
-function startGame(i=0){sfx.unlock();$('title').hidden=true;$('end').hidden=true;$('clear').hidden=true;document.body.classList.remove('titling');camera.clearViewOffset();game.mode='play';game.startedAt=performance.now();game.cleared=[false,false,false];game.starsRun=[null,null,null];game.gemsByLevel=[0,0,0];
+function startGame(i=0){sfx.unlock();$('title').hidden=true;$('end').hidden=true;$('clear').hidden=true;document.body.classList.remove('titling');camera.clearViewOffset();game.mode='play';game.startedAt=performance.now();game.cleared=[false,false,false,false];game.starsRun=[null,null,null,null];game.gemsByLevel=[0,0,0,0];
   cam.targetDist=cam.dist=9;cam.targetPitch=cam.pitch=.42;loadLevel(i);showLevelCard();}
 $('btn-start').onclick=()=>startGame(0);
 function renderChapterStars(){document.querySelectorAll('[data-chapter]').forEach(b=>{const id=LEVEL_IDS[b.dataset.chapter],s=save.stars[id]||0;b.querySelector('.stars').textContent='★'.repeat(s)+'☆'.repeat(3-s);});}
@@ -191,7 +196,7 @@ function levelClear(){
   if(L.id==='kan')unlock('wuyin');unlock(L.id);
   game.mode='clear';sfx.clear();sfx.setLayer(3);mascot.cheer();
   $('clear-title').textContent=L.title+' · 已通';$('clear-glyph').innerHTML=glyph(L.lines,'big');
-  $('clear-stars').innerHTML=['通关','爻玉 '+got+' / '+L.gems.length,'不落水'].map((t,i)=>'<li class="'+(stars[i]?'on':'')+'"><span>'+(stars[i]?'★':'☆')+'</span>'+t+'</li>').join('');
+  $('clear-stars').innerHTML=['通关','爻玉 '+got+' / '+L.gems.length,L.noFallLabel||'不落水'].map((t,i)=>'<li class="'+(stars[i]?'on':'')+'"><span>'+(stars[i]?'★':'☆')+'</span>'+t+'</li>').join('');
   $('clear-time').textContent=fmt(game.levelTime)+(game.challenge?'（挑战）':'');$('clear-best').textContent=fmt(save.best[L.id]);
   $('clear').hidden=false;$('btn-next').focus();
 }
@@ -202,9 +207,9 @@ function nextLevel(){
 }
 function showEnd(){
   game.mode='end';sfx.playTheme('end');sfx.setLayer(2);const secs=(performance.now()-game.startedAt)/1000;
-  $('end-time').textContent=fmt(secs);$('end-gems').textContent=game.gemsByLevel.reduce((a,b)=>a+b,0)+' / 18';$('end-stars').textContent=game.starsRun.reduce((a,b)=>a+(b||0),0)+' / 9';
+  $('end-time').textContent=fmt(secs);$('end-gems').textContent=game.gemsByLevel.reduce((a,b)=>a+b,0)+' / '+LEVELS.length*6;$('end-stars').textContent=game.starsRun.reduce((a,b)=>a+(b||0),0)+' / '+LEVELS.length*3;
   $('end-map').innerHTML=WORLD_ORDER.map((id,k)=>{const T=TRIGRAMS[id],a=k/8*Math.PI*2,x=50+Math.sin(a)*38,y=50-Math.cos(a)*38,done=(id==='kan'&&game.cleared[0])||(id==='li'&&game.cleared[1]);
-    return '<div class="node'+(done?' done':'')+'" style="left:'+x+'%;top:'+y+'%">'+glyph(T.lines)+'<b>'+T.name+'</b><small>'+T.image+' · '+T.dir+'</small></div>';}).join('')+'<div class="hub">'+(game.cleared[2]?glyph([1,0,1,0,1,0])+'<br>既济 · 水在火上<br>':'')+'后天八卦方位<br><small>北在上</small></div>';
+    return '<div class="node'+(done?' done':'')+'" style="left:'+x+'%;top:'+y+'%">'+glyph(T.lines)+'<b>'+T.name+'</b><small>'+T.image+' · '+T.dir+'</small></div>';}).join('')+'<div class="hub">'+(game.cleared[2]?'<span class="hubhex">'+glyph([1,0,1,0,1,0])+(game.cleared[3]?glyph([0,1,0,1,0,1]):'')+'</span><br>既济'+(game.cleared[3]?' · 未济':' · 水在火上')+'<br>':'')+'后天八卦方位<br><small>北在上</small></div>';
   $('end').hidden=false;
 }
 $('btn-again').onclick=()=>{showTitle();};
@@ -221,10 +226,10 @@ function updateHud(force){
 }
 
 // ---------- 主循环 ----------
-const clock=new THREE.Clock();let acc=0,testMove=null;const FIXED=1/120;
+const clock=new THREE.Clock();let acc=0,testMove=null,testUp=false;const FIXED=1/120;
 function step(dt){
   game.time+=dt;const L=game.level,p=ctrl.p,playing=game.mode==='play';if(playing)game.levelTime+=dt;
-  const input=!playing?{x:0,z:0}:testMove?{...testMove}:inputVector();input.jump=playing&&jumpPressed;jumpPressed=false;
+  const input=!playing?{x:0,z:0}:testMove?{...testMove}:inputVector();input.jump=playing&&jumpPressed;jumpPressed=false;input.up=playing&&(testUp||jumpHeld||keys.has('Space')||keys.has('KeyK'));
   L.update(dt,game.time,p);
   ctrl.update(dt,input);
   if(p.y<L.killY){
@@ -246,7 +251,10 @@ function render(dt){
   const e=1-Math.exp(-dt*6);cam.yaw+=(cam.targetYaw-cam.yaw)*e;cam.pitch+=(cam.targetPitch-cam.pitch)*e;cam.dist+=(cam.targetDist-cam.dist)*e;
   if(keys.has('KeyQ'))cam.targetYaw+=dt*1.8;if(keys.has('KeyR'))cam.targetYaw-=dt*1.8;
   if(game.mode!=='title')cam.focus.lerp(new THREE.Vector3(p.x+p.vx*.25,p.y+1.1,p.z+p.vz*.25),1-Math.exp(-dt*5));
-  camera.position.set(cam.focus.x+Math.sin(cam.yaw)*Math.cos(cam.pitch)*cam.dist,cam.focus.y+Math.sin(cam.pitch)*cam.dist,cam.focus.z+Math.cos(cam.yaw)*Math.cos(cam.pitch)*cam.dist);camera.lookAt(cam.focus);
+  camera.position.set(cam.focus.x+Math.sin(cam.yaw)*Math.cos(cam.pitch)*cam.dist,cam.focus.y+Math.sin(cam.pitch)*cam.dist,cam.focus.z+Math.cos(cam.yaw)*Math.cos(cam.pitch)*cam.dist);if(game.level.camBlock&&game.mode!=='title'){/* 镜头碰到墙：沿视线往回收，别钻进石壁里 */const f=cam.focus,P=camera.position;let k=1;
+    for(let i=1;i<=18;i++){const t=i/18,x=f.x+(P.x-f.x)*t,y=f.y+(P.y-f.y)*t,z=f.z+(P.z-f.z)*t;if(camBlocks.some(c=>y<c.top+.3&&y>c.bottom-.3&&physics.contains(c,x,z,.45))){k=(i-1)/18;break;}}
+    cam.k=k<(cam.k??1)?k:(cam.k??1)+(k-(cam.k??1))*Math.min(1,dt*3);P.lerpVectors(f,P,Math.max(.12,cam.k));}
+  if(game.level.camMaxY){const my=game.level.camMaxY(p);if(camera.position.y>my)camera.position.y=my;}camera.lookAt(cam.focus);
   if(game.mode==='title'){const r={width:stage.clientWidth,height:stage.clientHeight},wide=r.width>760;camera.setViewOffset(r.width,r.height,wide?-r.width*.2:0,wide?0:r.height*.3,r.width,r.height);}
   sun.position.set(p.x-12,p.y+22,p.z+8);sun.target.position.set(p.x,p.y,p.z);
   world.sky.position.copy(camera.position);
@@ -286,8 +294,8 @@ addEventListener('pointerdown',()=>sfx.unlock(),{once:true});addEventListener('k
 window.__Q={
   get game(){return game;},get level(){return game.level;},get player(){return ctrl.p;},get mascot(){return mascot;},get physics(){return physics;},camera,renderer,cam,save,sfx,
   start:startGame,loadLevel,openLevels,selectCharacter,openCodex,unlock,setChallenge,showTitle,setForm,cycleForm,nearestInteractable,
-  step(seconds,{keys:k=[],jump=false,move=null,draw=true}={}){k.forEach(c=>keys.add(c));testMove=move;let first=true;for(let t=0;t<seconds-1e-9;t+=FIXED){if(first&&jump)jumpPressed=true;first=false;step(FIXED);}testMove=null;k.forEach(c=>keys.delete(c));if(draw){render(1/60);updateHud(true);}},
-  jump(){jumpPressed=true;},interact,
+  step(seconds,{keys:k=[],jump=false,move=null,up=false,draw=true}={}){k.forEach(c=>keys.add(c));testMove=move;testUp=up;let first=true;for(let t=0;t<seconds-1e-9;t+=FIXED){if(first&&jump)jumpPressed=true;first=false;step(FIXED);}testMove=null;testUp=false;k.forEach(c=>keys.delete(c));if(draw){render(1/60);updateHud(true);}},
+  jump(){jumpPressed=true;},interact,slam(){formKey();},
   teleport(x,y,z){ctrl.place(x,y,z);},
   render(dt=1/60){render(dt);updateHud(true);},manual:false,
   ready:true,
