@@ -1,6 +1,7 @@
 import * as THREE from '../../vendor/three.module.js';
 import {WEIJI_YAO} from '../lore.js';
 import {createFox} from '../fox.js';
+import {createSeaLife} from './weiji-life.js';
 
 // 第四境 · 火水未济（第六十四卦，离上坎下）。整境在水下，水面上漂着河灯——"火在水上"。
 // 六段水域依次对应未济六爻的爻辞（对应关系是本作的联想，界面里标明"原创"）：
@@ -153,7 +154,7 @@ export function buildWeiji(ctx){
   const laneSchool=school(70,'#8fbcdf',{scale:1});
   // 鱼群在航道里的位置：返回 {d, i}（离航道中心多远、最近的采样点）
   function laneNear(x,y,z){let best=1e9,bi=0;for(let i=0;i<laneSamples.length;i++){const s=laneSamples[i].p,d=(s.x-x)**2+(s.y-y)**2+(s.z-z)**2;if(d<best){best=d;bi=i;}}return {d:Math.sqrt(best),i:bi};}
-  const columns=[{x:3.4,z:-21,r:1.35},{x:2.4,z:-29.5,r:1.35}];// 气泡柱：往上托
+  const columns=[{x:2.3,z:-21,r:1.3},{x:-1.9,z:-29.5,r:1.3}];/* 不在正前方的直线上：直接往前游过不去（征凶），要绕着找 */// 气泡柱：往上托
 
   // 九四：堵在石缝里的鱼群
   const crack={pos:V(0,2.2,-51.5),col:physics.add({kind:'cyl',x:0,z:-51.5,r:1.7,top:4.6,bottom:-1,safe:false}),scattered:false,t:0,home:V(-6.5,7.5,-46)};
@@ -200,6 +201,24 @@ export function buildWeiji(ctx){
   function jellyPos(j,i,t){const a=i*2+t*j.sp;j.pos.set(j.c.x+Math.cos(a)*j.r,j.c.y+Math.sin(t*1.7+i)*.45,j.c.z+Math.sin(a)*j.r);}
   const tmp=V(),tan=V(),altarTop=V(0,1.6,-64.2),tmp2=V(),foxTgt=V(),foxLook=V();
   const lanterns=school(9,'#3e5468',{scale:.7,lure:true});const lanternHome=V(6.6,2,-55);let lanternMode='home';
+  lanterns.fish.forEach(f=>{f.mode='home';});
+  // 三盏灯座：带着光珠和跟过来的灯笼鱼靠近，三条灯笼鱼游进去，灯座就亮了。三盏都亮，石台才接得住光珠
+  const sconces=[[-8.4,-54.6],[8.4,-58.4],[-8.4,-62.2]].map(([x,z],k)=>{const g=new THREE.Group();g.position.set(x,0,z);world.root.add(g);
+    S(world.mesh(new THREE.CylinderGeometry(.28,.4,1.1,10),world.toon('#7d8f8a'),0,.55,0,g));
+    const bowl=new THREE.Mesh(new THREE.CylinderGeometry(.5,.3,.3,14,1,true),new THREE.MeshToonMaterial({color:'#a39a7c',side:THREE.DoubleSide,emissive:'#000000'}));bowl.position.y=1.25;g.add(bowl);
+    const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:pearl.glow.material.map,color:'#e6ffb0',transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending}));glow.position.y=1.5;glow.scale.setScalar(2.6);g.add(glow);
+    physics.add({kind:'cyl',x,z,r:.5,top:1.4,bottom:-1,safe:true});cullable.push({o:g,p:V(x,0,z),r:30});
+    return {k,x,z,pos:V(x,1.5,z),lit:false,bowl,glow,glowT:0};});
+  let litCount=0;
+  // 壁画：光照亮之后才看得清——未济六爻，自下而上
+  const mural=(()=>{const c=document.createElement('canvas');c.width=640;c.height=400;const g=c.getContext('2d');
+    g.fillStyle='#2e3d3b';g.fillRect(0,0,640,400);g.strokeStyle='#c9b884';g.lineWidth=6;g.strokeRect(10,10,620,380);
+    g.fillStyle='#f3e3b0';g.font='bold 34px "Songti SC","Noto Serif SC",serif';g.textAlign='center';g.fillText('未济 · 六爻',320,58);
+    const rows=[['初六','濡其尾'],['九二','曳其轮'],['六三','利涉大川'],['九四','震用伐鬼方'],['六五','君子之光'],['上九','濡其首']];
+    rows.forEach(([n,t],i)=>{const y=350-i*46,yang=n[0]==='九'||n==='上九';g.fillStyle='#f3e3b0';if(yang)g.fillRect(70,y-14,150,16);else{g.fillRect(70,y-14,64,16);g.fillRect(156,y-14,64,16);}
+      g.textAlign='left';g.font='bold 26px "Songti SC","Noto Serif SC",serif';g.fillText(n,250,y);g.font='26px "Songti SC","Noto Serif SC",serif';g.fillText(t,330,y);});
+    g.font='16px sans-serif';g.fillStyle='#bfb291';g.textAlign='right';g.fillText('爻辞摘句 · 自下而上',620,385);
+    const m=new THREE.Mesh(new THREE.PlaneGeometry(3.6,2.25),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),color:new THREE.Color(.1,.1,.1)}));m.position.set(-9.12,2.3,-58.4);m.rotation.y=Math.PI/2;world.root.add(m);cullable.push({o:m,p:V(-9,0,-58.4),r:28});return m;})();
   lanterns.fish.forEach(f=>{f.pos.copy(lanternHome).add(f.off);});
   // 洞壁上的"光苔"：只有被光照到时才看得见（卡通材质，暗处几乎是黑的）
   {const m=world.toon('#d9ffcf',{emissive:'#000000'});for(const [x,y,z] of [[-8.9,2.4,-54],[-8.9,3,-58.5],[8.9,2.6,-61],[8.9,1.8,-56.5],[-8.9,1.6,-64]]){const b=S(world.mesh(new THREE.SphereGeometry(.35,10,8),m,x,y,z));b.scale.set(.35,1,1.4);b.castShadow=false;}}
@@ -262,7 +281,9 @@ export function buildWeiji(ctx){
   hide(gems[3]);hide(gems[4]);hide(gems[5]);
 
   // ---------- 小狐狸：全程跟着游 ----------
-  const fox=createFox({world,envMap:ctx.envMap});scene.add(fox.root);
+  const life=createSeaLife({world,physics,scene,toast,sfx,burst,rng,V,dummy,cT,bubble,cullable,S,SURF,unlock:ctx.unlock,
+    onShellsDone(){ctx.unlock('bei',true);if(ctx.flags){ctx.flags.foxPin=true;ctx.persist();}fox.setPin(true);fox.doTrick('spin');}});
+  const fox=createFox({world,envMap:ctx.envMap,style:(typeof window!=='undefined'&&window.__FOX_STYLE)||'mochi'});/* __FOX_STYLE：出对比图时用 */scene.add(fox.root);fox.setPin(!!(ctx.flags&&ctx.flags.foxPin));
   fox.pos.set(-1.4,1,14.6);fox.root.position.copy(fox.pos);
 
   // ---------- 状态 ----------
@@ -285,7 +306,7 @@ export function buildWeiji(ctx){
     c.col.top=.5;}
   function scatterCrack(){if(crack.scattered)return;crack.scattered=true;crack.t=0;physics.remove(crack.col);sfx.bounce();toast('一声"震"，堵在石缝里的鱼群一哄而散——路通了！',4200);}
   function dropPearl(p,reason){if(pearl.state!=='held')return;pearl.state='free';pearl.noPick=1.2;const g=physics.groundAt(p.x,p.z,p.y+.5);pearl.pos.set(p.x,(g.col?g.h:p.y)+.35,p.z);if(reason)toast(reason,4200);}
-  function placePearl(){pearl.state='altar';pearl.pos.set(0,1.45,-64.2);caveLit=true;lanternMode='altar';sfx.solve();ctx.unlock('yaoci',true);
+  function placePearl(){if(litCount<3){toast('石台旁边的三盏灯座还暗着（'+litCount+' / 3）。带着光珠和灯笼鱼，靠近灯座把它们点亮。',4800);return;}pearl.state='altar';pearl.pos.set(0,1.45,-64.2);caveLit=true;lanternMode='altar';lanterns.fish.forEach(f=>{if(f.mode==='follow')f.mode='altar';});sfx.solve();ctx.unlock('yaoci',true);
     toast('六五 · 君子之光，有孚，吉。——光珠放上石台，整个洞亮了，石门升起来了。',5600);}
   function checkTablet(){
     const n=linesName(tab.lines);
@@ -301,19 +322,22 @@ export function buildWeiji(ctx){
     id:'weiji',index:3,lines:LINES,title:'第四境 · 未济',subtitle:'火在水上，未济',forms:false,camBlock:true,noFallLabel:'不被卷走',
     spawn:{x:0,y:0,z:14.2,yaw:0},killY:-9,camYaw:0,timeLimit:720,gems,gate,clams,jellies,toggles,wheels,
     get solved(){return tab.solved&&tab.demo<0;},get zone(){return zone;},get pearl(){return pearl.state;},get caveLit(){return caveLit;},get tablet(){return tab.lines.slice();},get method(){return tab.method;},
-    get crackOpen(){return crack.scattered;},get surfaceOpen(){return tab.solved&&tab.demo<0;},get surging(){return surgeOn;},get fox(){return fox.pos;},
+    get crackOpen(){return crack.scattered;},get surfaceOpen(){return tab.solved&&tab.demo<0;},get surging(){return surgeOn;},get fox(){return fox.pos;},_fox:fox,life,sconces,get litCount(){return litCount;},get shellCount(){return life.shellCount;},shellTotal:life.shellTotal,
     slam(p){if(!slamOk){toast('要游到九四那段水域，才学得会"震"。');return false;}return true;},
     get interactables(){
       const list=[{pos:stele.pos,label:'读石碑',act:()=>ctx.openLore('weiji')}];
       for(const m of markers)list.push({pos:m.pos,label:'读爻辞（'+WEIJI_YAO[m.k].name+'）',act:()=>{const y=WEIJI_YAO[m.k];ctx.unlock('yaoci');toast(y.name+'：'+y.text+'　——'+y.say,7000);}});
       if(pearl.state==='free')list.push({pos:pearl.pos,label:'拿起光珠',act:()=>{pearl.state='held';sfx.pickup();}});
-      if(pearl.state==='held')list.push({pos:V(0,.9,-64.2),label:'把光珠放上石台',act:placePearl});
+      if(pearl.state==='held')list.push({pos:V(0,.9,-64.2),label:litCount<3?'石台（先点亮三盏灯座 '+litCount+'/3）':'把光珠放上石台',act:placePearl});
+      list.push({pos:V(-8.6,0,-58.4),label:'看壁画',act:()=>{ctx.unlock('yaoci');toast('壁画刻着未济六爻（自下而上）：初六 濡其尾 · 九二 曳其轮 · 六三 利涉大川 · 九四 震用伐鬼方 · 六五 君子之光 · 上九 濡其首。',8000);}});
       if(!tab.solved){list.push({pos:V(0,0,-76.4),label:'综：把石碑整块倒过来',act:flipTablet});
         for(const t of toggles)list.push({pos:t.pos,label:'错：变「'+t.name+'」爻（'+(tab.lines[t.k]?'阳→阴':'阴→阳')+'）',act:()=>toggleLine(t.k)});}
       return list;
     },
     onFall(){if(pearl.state==='held'){pearl.state='free';pearl.pos.copy(pearl.home);}toast('被海沟里的暗流卷下去了……"未济，征凶"——跟着鱼群走。',4200);},
+    onLand(col){life.onLand(col);},
     onSlam(p,col,still){if(!slamOk)return;
+      if(life.onSlam(p))hintAt=now;
       bubble(p.x,p.y+.2,p.z,{n:22,spread:1.6,up:1.6});
       for(const c of clams)if(!c.open&&Math.hypot(p.x-c.x,p.z-c.z)<3.8&&p.y<2.5)openClam(c);
       if(!crack.scattered&&Math.hypot(p.x-crack.pos.x,p.z-crack.pos.z)<6&&p.y<5)scatterCrack();
@@ -330,11 +354,11 @@ export function buildWeiji(ctx){
         case 1:return '九二 · 曳其轮：暗流'+(surgeOn?'来了！松手沉到底，或躲到车轮后面':'暂停了，快往前游')+'。';
         case 2:return '六三 · 利涉大川：海沟的暗流往下拖——钻进左边的鱼群，跟着鱼群渡过去。';
         case 3:{const open=clams.filter(c=>c.open).length;return '九四 · 震：空中连按两下「跳」（或「震」/ F）向下砸。贝壳 '+open+'/3'+(crack.scattered?'，石缝已通':'，石缝被鱼群堵着')+(pearl.state==='held'?'；光珠在手':'')+'。';}
-        case 4:return caveLit?'六五 · 君子之光：洞亮了，穿过升起的石门。':pearl.state==='held'?'六五 · 君子之光：带着光珠，绕开水母，放上洞底的石台（E）。':'六五：光珠'+(pearl.state==='free'?'掉了，回去捡起来':'还在九四的大贝壳里——用"震"把贝壳震开')+'。';
+        case 4:return caveLit?'六五 · 君子之光：洞亮了，穿过升起的石门。':pearl.state==='held'?(litCount<3?'六五 · 君子之光：带着光珠和灯笼鱼，点亮三盏灯座（'+litCount+' / 3），别碰水母。':'六五 · 三盏灯座都亮了：把光珠放上洞底的石台（E）。'):'六五：光珠'+(pearl.state==='free'?'掉了，回去捡起来':'还在九四的大贝壳里——用"震"把贝壳震开')+'。';
         default:return '上九：把"既济"石碑变成"未济"——整块倒过来（综），或把六爻一一变过来（错）。现在：'+(linesName(tab.lines)||'都不是')+'。';}
     },
     update(dt,t,p){
-      now=t;gate.update(dt,t);
+      now=t;gate.update(dt,t);life.update(dt,t,p,zone);
       // 水中 / 水面
       const breach=tab.solved&&tab.demo<0;
       p.swim=p.y<SURF-.35;p.ceilY=breach?Infinity:SURF-1.05;p.breachY=breach?SURF-1.3:Infinity;
@@ -347,7 +371,7 @@ export function buildWeiji(ctx){
       // 九二：一阵一阵的暗流往回冲（+z）
       surge=(t%5.6);const was=surgeOn;surgeOn=surge<3;ramp=Math.min(1,surge/.5,(3-surge)/.4);
       if(surgeOn&&!was&&zone===1){bubble(p.x,p.y+1,p.z-3,{n:6,spread:3,up:.2,vz:6});if(firstSurge){firstSurge=false;toast('暗流来了！松开「跳」沉到底，或者躲到车轮后面。',3800);}}
-      if(surgeOn&&p.z<1&&p.z>-15.2){let k=p.grounded?.12:1;for(const w of wheels)if(Math.abs(p.x-w.x)<1.7&&p.z>w.z&&p.z<w.z+3.4&&p.y<2.7)k=0;fz+=5.4*Math.max(0,ramp)*k;}
+      if(surgeOn&&p.z<1&&p.z>-15.2&&!(p.grounded&&p.ground&&p.ground.tag==='manta')){let k=p.grounded?.12:1;/* 骑在鳐鱼背上：不受暗流影响 */for(const w of wheels)if(Math.abs(p.x-w.x)<1.7&&p.z>w.z&&p.z<w.z+3.4&&p.y<2.7)k=0;fz+=5.4*Math.max(0,ramp)*k;}
       // 六三：海沟暗流往下拖；鱼群航道往前带；气泡柱往上托
       if(p.z<-14.9&&p.z>-35.4&&p.swim){const L=laneNear(p.x,p.y+.45,p.z);
         if(L.d<1.9&&L.i<LANE_N){const s=laneSamples[L.i];fx+=s.t.x*FISH_SPEED+(s.p.x-p.x)*3.5;fy+=s.t.y*FISH_SPEED+(s.p.y-(p.y+.45))*3.5;fz+=s.t.z*FISH_SPEED+(s.p.z-p.z)*3.5;p.inLane=true;}
@@ -369,7 +393,9 @@ export function buildWeiji(ctx){
         if(j.cd<=0&&Math.hypot(p.x-j.pos.x,p.z-j.pos.z)<.85&&p.y+.5>j.pos.y-1.2&&p.y<j.pos.y+.4){j.cd=1.5;const dx=p.x-j.pos.x,dz=p.z-j.pos.z,l=Math.hypot(dx,dz)||1;p.vx=dx/l*4.5;p.vz=dz/l*4.5;p.vy=-1.5;p.stun=.45;sfx.land(8);ctx.mascot.impulse(-4);
           if(pearl.state==='held')dropPearl(p,'被水母蛰了一下，光珠掉了！游过去碰一下就能捡回来。');else if(t-lastJellyHint>4){lastJellyHint=t;toast('哎呀，水母！绕开它。');}}});
       // 灯笼鱼：看见光珠就跟过来；光珠上了石台，就围着石台转
-      if(lanternMode==='home'&&pearl.state==='held'&&Math.hypot(p.x-lanternHome.x,p.z-lanternHome.z)<7&&p.z<-51.8){lanternMode='follow';toast('一群灯笼鱼被光珠吸引，跟了过来。',3200);}
+      if(lanternMode==='home'&&pearl.state==='held'&&Math.hypot(p.x-lanternHome.x,p.z-lanternHome.z)<7&&p.z<-51.8){lanternMode='follow';lanterns.fish.forEach(f=>{if(f.mode==='home')f.mode='follow';});toast('一群灯笼鱼被光珠吸引，跟了过来。带它们去点亮三盏灯座。',3800);}
+      if(pearl.state==='held'&&lanternMode==='follow')for(const sc of sconces){if(sc.lit||Math.hypot(p.x-sc.x,p.z-sc.z)>2.4)continue;const fl=lanterns.fish.filter(f=>f.mode==='follow').slice(0,3);if(fl.length<3)break;fl.forEach(f=>{f.mode=sc.k;});sc.lit=true;litCount++;sfx.toggle(true);bubble(sc.x,1.6,sc.z,{n:10,spread:.6,up:1.2});
+        toast(litCount<3?'三条灯笼鱼游进灯座，灯座亮了（'+litCount+' / 3）。':'三盏灯座都亮了！壁画也看得清了——把光珠放上洞底的石台。',4200);}
       // ----- 石碑 -----
       if(tab.flipping>0){tab.flipping=Math.max(0,tab.flipping-dt/1.1);const k=1-tab.flipping,e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;slab.rotation.z=e*Math.PI;slab.position.y=2.75+Math.sin(k*Math.PI)*.6;
         if(tab.flipping===0){slab.rotation.z=0;slab.position.y=2.75;tab.lines.reverse();drawTab();drawToggleBars();ctx.unlock('zong',true);burst(V(0,3,-77.4),{color:'#ffe9b0',n:18,speed:2.4,up:2,gravity:-1});checkTablet();}}
@@ -384,7 +410,11 @@ export function buildWeiji(ctx){
     },
     // 纯画面：每帧一次，p 是插值后的位置，t 是插值后的时间
     frame(dt,t,p){
-      for(const c of cullable){const v=Math.hypot(c.p.x-p.x,c.p.z-p.z)<c.r;if(c.o.visible!==v&&!(c.o===pearl.group&&pearl.state==='clam'))c.o.visible=v;}
+      life.frame(dt,t,p);
+      const pz=zoneOf(p.z);
+      // 隔着石壁看不见的不画：暗洞（六五）四面是墙，只从九四的石缝、上九的石门看得进去
+      const seen=iz=>!((iz<=3&&pz===5)||(iz<=2&&pz===4)||(iz===4&&pz<=2)||(iz===5&&pz<=3));
+      for(const c of cullable){const v=Math.hypot(c.p.x-p.x,c.p.z-p.z)<c.r&&seen(zoneOf(c.p.z));if(c.o.visible!==v&&!(c.o===pearl.group&&pearl.state==='clam'))c.o.visible=v;}
       for(const g of gems)if(!hidden.has(g)&&!g.taken)g.group.visible=Math.hypot(g.pos.x-p.x,g.pos.z-p.z)<38;
       cT.value=t;surfMat.uniforms.t.value=t;updateLamps(t);
       // ----- 鱼群 -----
@@ -403,7 +433,9 @@ export function buildWeiji(ctx){
       if(pearl.state==='held')pearl.group.position.set(p.x+Math.sin(p.yaw)*.55,p.y+1.25+Math.sin(t*3)*.06,p.z+Math.cos(p.yaw)*.55);else{pearl.group.position.copy(pearl.pos);if(pearl.state!=='clam')pearl.group.position.y+=Math.sin(t*2.2)*.08;}
       pearl.glow.material.opacity=.75+Math.sin(t*4)*.15;pearlLight.position.copy(pearl.group.position);pearlLight.intensity=pearl.state==='clam'?0:pearl.state==='altar'?6:5;
       // ----- 暗洞 -----
-      const inCave=p.z<-51.8&&p.z>-67.4;dark+=((inCave?(caveLit?.3:1):0)-dark)*Math.min(1,dt*2.5);
+      const inCave=p.z<-51.8&&p.z>-67.4;dark+=((inCave?(caveLit?.3:1-.17*litCount):0)-dark)*Math.min(1,dt*2.5);
+      for(const sc of sconces){sc.glowT+=((sc.lit?1:0)-sc.glowT)*Math.min(1,dt*2);sc.glow.material.opacity=sc.glowT*(.65+Math.sin(t*3+sc.k)*.12);sc.bowl.material.emissive.setRGB(.55*sc.glowT,.6*sc.glowT,.3*sc.glowT);}
+      {const b=.1+.9*Math.min(1,caveLit?1:litCount/3);mural.material.color.setRGB(b,b,b);}
       lights.hemi.intensity=HEMI*(1-.9*dark);lights.sun.intensity=SUN*(1-.92*dark);cK.value=1-dark;
       if(!above){scene.fog.color.copy(fogW).lerp(fogDark,dark);scene.fog.far=50-30*dark;}
       altarLight.intensity+=((caveLit?5:0)-altarLight.intensity)*Math.min(1,dt*1.5);
@@ -412,7 +444,7 @@ export function buildWeiji(ctx){
         dummy.position.copy(j.pos);dummy.rotation.set(0,0,0);dummy.scale.set(pulse,1/pulse,pulse);dummy.updateMatrix();bells.setMatrixAt(i,dummy.matrix);
         for(let k=0;k<5;k++){const a=k/5*Math.PI*2;dummy.position.set(j.pos.x+Math.cos(a)*.28,j.pos.y,j.pos.z+Math.sin(a)*.28);dummy.rotation.set(Math.sin(t*2.4+k+i)*.25,0,Math.cos(t*2+k)*.25);dummy.scale.set(1,1.1+Math.sin(t*2+k)*.15,1);dummy.updateMatrix();tents.setMatrixAt(i*5+k,dummy.matrix);}});
       bells.instanceMatrix.needsUpdate=tents.instanceMatrix.needsUpdate=true;
-      lanterns.fish.forEach((f,i)=>{const a=t*(1.6+i*.07)+f.ph,c=lanternMode==='home'?lanternHome:lanternMode==='altar'?altarTop:(pearl.state==='held'?pearl.group.position:lanternHome),r=lanternMode==='altar'?1.6:.9;
+      lanterns.fish.forEach((f,i)=>{const a=t*(1.6+i*.07)+f.ph,c=f.mode==='home'?lanternHome:f.mode==='altar'?altarTop:f.mode==='follow'?(pearl.state==='held'?pearl.group.position:lanternHome):sconces[f.mode].pos,r=f.mode==='follow'?.9:f.mode==='home'?.9:.75;
         const want=tmp.set(c.x+Math.cos(a)*r,c.y+Math.sin(a*1.4)*.4,c.z+Math.sin(a)*r);tan.copy(f.pos);f.pos.lerp(want,Math.min(1,dt*2.5));const dir=tan.subVectors(f.pos,tan);if(dir.lengthSq()<1e-6)dir.set(-Math.sin(a),0,Math.cos(a));lanterns.set(i,f.pos,dir);});lanterns.done();
       const camAbove=ctx.camera.position.y>SURF;if(camAbove!==above){above=camAbove;setSky(above);scene.fog.color.copy(above?fogA:fogW);scene.fog.near=above?30:7;scene.fog.far=above?160:50;}
       // ----- 气泡 -----

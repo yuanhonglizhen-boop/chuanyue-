@@ -60,7 +60,8 @@ export function createController({physics,onLand,onHop,onJump,onSlam}){
     const g=physics.groundAt(p.x,p.z,Math.max(p.y,p.y-(p.vy+p.flowY)*dt));
     if(g.col&&p.y<=g.h+.001&&p.vy+p.flowY<=0){
       const impact=-p.vy;p.y=g.h;p.vy=0;
-      if(!wasGrounded){p.grounded=true;p.ground=g.col;p.jumps=0;if(p.slamming){p.slamming=false;onSlam?.(g.col,false);}else onLand?.(g.col,Math.min(impact,3),true);}
+      if(!wasGrounded){p.grounded=true;p.ground=g.col;p.jumps=0;if(p.slamming){p.slamming=false;onSlam?.(g.col,false);}else onLand?.(g.col,Math.min(impact,3),true);
+        if(g.col.bounce&&!p.slamming){p.vy=g.col.bounce;p.grounded=false;p.ground=null;}/* 海葵：弹起来 */}
       else p.ground=g.col;
       if(g.col.safe&&!g.col.dx&&!g.col.dz&&!g.col.dy)p.checkpoint={x:p.x,y:p.y,z:p.z};
     }else{p.grounded=false;p.ground=null;}

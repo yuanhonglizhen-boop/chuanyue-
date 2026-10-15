@@ -197,3 +197,6 @@ html.landui #card h2{font-size:34px}
 /* 结局：既济、未济并排 */
 .hubhex{display:inline-flex;gap:8px}
 body.slam #btn-form{background:#a8e3f0}
+
+.shell-icon{font-style:normal;font-size:15px;line-height:1}
+.gems[hidden]{display:none}

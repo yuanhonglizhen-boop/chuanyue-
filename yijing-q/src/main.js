@@ -74,7 +74,7 @@ function loadLevel(i){
     onJump:(n)=>{mascot.impulse(n===1?2.6:3.2);sfx.jump(n);if(n===2)burst(new THREE.Vector3(ctrl.p.x,ctrl.p.y+.2,ctrl.p.z),{color:'#e9fff6',n:8,speed:1.6,up:.5,life:.45,size:.3,gravity:0});},
     onSlam:(col,still)=>{const p=ctrl.p;mascot.impulse(-6);sfx.thud();burst(new THREE.Vector3(p.x,p.y+.15,p.z),{color:'#e8fbff',n:18,speed:4,up:1.2,life:.6,size:.4,gravity:-1});game.level?.onSlam?.(p,col,still);},
     onLand:(col,impact,hop)=>{mascot.impulse(-Math.min(6,impact*.62));if(!hop&&impact>5){sfx.land(impact);burst(new THREE.Vector3(ctrl.p.x,ctrl.p.y+.05,ctrl.p.z),{color:'#f4ead2',n:8,speed:2,up:.8,life:.4,size:.3});}if(col.bounce){sfx.bounce();burst(new THREE.Vector3(col.x,col.top+.2,col.z),{color:'#ffffff',n:14,speed:2.5,up:1});}game.level?.onLand?.(col,impact);}});
-  const ctx={world,kit,physics,scene,toast,sfx,rng,burst,lights:{hemi,sun},camera,envMap,get mascot(){return mascot;},get player(){return ctrl.p;},getForm:()=>game.form,setForm,openLore,unlock,challenge:game.challenge};
+  const ctx={world,kit,physics,scene,toast,sfx,rng,burst,lights:{hemi,sun},camera,envMap,get mascot(){return mascot;},get player(){return ctrl.p;},getForm:()=>game.form,setForm,openLore,unlock,challenge:game.challenge,flags:save.flags,persist};
   game.level=LEVELS[i](ctx);world.bake();camBlocks=physics.colliders.filter(c=>c.camBlock);cam.k=1;perf.grace=4;/* 静态装饰合并成少数网格 */
   const L=game.level;mascot.setTrigram(L.lines);
   ctrl.place(L.spawn.x,L.spawn.y,L.spawn.z,L.spawn.yaw);Object.assign(prevP,{x:L.spawn.x,y:L.spawn.y,z:L.spawn.z,yaw:L.spawn.yaw});
@@ -222,7 +222,7 @@ function showTitle(){game.mode='title';$('end').hidden=true;$('clear').hidden=tr
 // ---------- HUD ----------
 let lastObjective='';
 function updateHud(force){
-  const L=game.level;const got=L.gems.filter(g=>g.taken).length;$('gems').textContent=got+' / '+L.gems.length;
+  const L=game.level;const got=L.gems.filter(g=>g.taken).length;$('gems').textContent=got+' / '+L.gems.length;$('shells-box').hidden=!L.shellTotal;if(L.shellTotal)$('shells').textContent=L.shellCount+' / '+L.shellTotal;
   const o=L.objective();if(o!==lastObjective||force){$('objective').textContent=o;lastObjective=o;}
   const it=game.mode==='play'?nearestInteractable():null;$('prompt').hidden=!it;if(it)$('prompt-label').textContent=it.label;$('btn-act').classList.toggle('ready',!!it);
   if(game.challenge){const left=game.timeLimit-game.levelTime;$('timer').textContent='⏱ '+fmt(left);$('timer').classList.toggle('low',left<30);}

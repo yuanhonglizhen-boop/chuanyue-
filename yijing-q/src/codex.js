@@ -38,6 +38,11 @@ export const CODEX=[
     key:'要点：初—四、二—五、三—上',
     quotes:[{t:'虽不当位，刚柔应也。',s:'《周易》未济《彖传》'}],
     game:'第四境：石碑变成未济后，三道光把初与四、二与五、三与上连起来。',hint:'通过第四境的石碑'},
+  {id:'bei',group:'知识',title:'贝',pinyin:'bèi',
+    one:'很早以前，人们把海里的贝壳当钱用。所以"货、财、贵、贸、赠"这些和钱财有关的字，都带着"贝"字旁。',
+    key:'要点：汉字里的"贝"旁，多和钱财有关',
+    quotes:[{t:'古者货贝而宝龟，周而有泉，至秦废贝行钱。',s:'东汉·许慎《说文解字》贝部'}],
+    game:'第四境：找齐藏在六段水域里的 12 枚贝壳，小狐狸会戴上珊瑚小发卡。',hint:'在第四境找齐 12 枚贝壳'},
   {id:'yaoci',group:'知识',title:'爻辞',pinyin:'yáo cí',
     one:'《周易》每一卦有一段"卦辞"，卦里的每一爻还各有一句"爻辞"。比如未济初六的爻辞是"濡其尾，吝"。',
     key:'要点：卦辞说整卦，爻辞说每一爻',
@@ -77,7 +82,7 @@ export const CODEX=[
 // 写存档时同时写容器 Storage（9.46+）与浏览器本地存储；普通网页里这两项都不存在，只用浏览器本地存储。
 const KEY='yijing-q-save-v1';
 function readRaw(){if(typeof window!=='undefined'&&typeof window.__YQ_SAVE_JSON==='string')return window.__YQ_SAVE_JSON;try{return localStorage.getItem(KEY);}catch{return null;}}
-export function loadSave(){try{const s=JSON.parse(readRaw()||'{}');return {codex:s.codex||['c-yao'],stars:s.stars||{},best:s.best||{},char:s.char||'yao',challenge:!!s.challenge,music:s.music!==false,sfx:s.sfx!==false,land:!!s.land};}catch{return {codex:['c-yao'],stars:{},best:{},char:'yao',challenge:false,music:true,sfx:true,land:false};}}
+export function loadSave(){try{const s=JSON.parse(readRaw()||'{}');return {codex:s.codex||['c-yao'],stars:s.stars||{},best:s.best||{},char:s.char||'yao',challenge:!!s.challenge,music:s.music!==false,sfx:s.sfx!==false,land:!!s.land,flags:s.flags||{}};}catch{return {codex:['c-yao'],stars:{},best:{},char:'yao',challenge:false,music:true,sfx:true,land:false,flags:{}};}}
 export function writeSave(s){let json;try{json=JSON.stringify(s);}catch{return;}
   if(typeof window!=='undefined'){window.__YQ_SAVE_JSON=json;const store=window.__YQ_STORE;if(store){try{const r=store.setStorage({key:KEY,data:json});if(r&&r.catch)r.catch(()=>{});}catch{}}}
   try{localStorage.setItem(KEY,json);}catch{}}

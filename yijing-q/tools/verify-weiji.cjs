@@ -48,7 +48,7 @@ async function runWeiji(p,check,shot){
   const solo=await p.evaluate(()=>{const Q=__Q,P=Q.player;const f0=Q.game.falls;for(let i=0;i<60*16&&Q.game.falls===f0;i++)Q.step(1/60,{move:{x:0,z:-1},up:true,draw:false});Q.step(.5,{draw:false});return {fell:Q.game.falls-f0,back:[+P.x.toFixed(1),+P.y.toFixed(1),+P.z.toFixed(1)],toast:document.getElementById('toast').textContent};});
   check('第四境·六三：不跟鱼群、直接往前游——被暗流拖下海沟，回到岸边（未济，征凶）',solo.fell===1&&solo.back[2]>-15.5,solo);
   await p.evaluate(()=>{__Q.game.levelFalls=0;});// 这一下是故意的，不算星
-  await S([{x:-4.1,z:-14.4,y:2.8},{x:-3.4,z:-37.8,lane:true,until:'P.z<-36.4',max:16},{x:-3.4,z:-38.6}],'第四境·六三（跟着鱼群渡海沟）');
+  await S([{x:-4.1,z:-14.4,y:2.8},{x:-3.4,z:-37.8,lane:true,until:'P.z<-36.4',max:16},{x:-2.2,z:-37.8}],'第四境·六三（跟着鱼群渡海沟）');
   const lane=await p.evaluate(()=>({gem:__Q.level.gems.find(g=>g.id==='lane').taken,zone:__Q.level.zone,falls:__Q.game.levelFalls}));
   check('第四境·六三：跟着鱼群渡过海沟，途中拿到鱼群里的爻玉',lane.gem&&lane.zone===3&&lane.falls===0,lane);
   await shot('w2-lane');
@@ -59,10 +59,10 @@ async function runWeiji(p,check,shot){
     {x:0,z:-49.6,slam:true,expect:'Q.level.crackOpen'}],'第四境·九四（震开贝壳、震散鱼群）');
   await shot('w3-crack');
   // 5. 六五：带着光珠穿过暗洞，放上石台，洞亮门开；拿洞角的爻玉
-  await S([{x:0,z:-53.8},{x:0,z:-62.9,act:true,expect:'Q.level.caveLit'},{x:-6.6,z:-64.6,until:"Q.level.gems.find(g=>g.id==='cave').taken",max:10}],'第四境·六五（光珠照亮暗洞）');
+  await S([{x:0,z:-53.8},{x:-7.5,z:-54.6,until:'Q.level.litCount>=1',max:10},{x:7.5,z:-55.5},{x:7.5,z:-58.4,until:'Q.level.litCount>=2',max:10},{x:7.6,z:-61.8},{x:5.6,z:-65.5},{x:-7,z:-65.5},{x:-7.5,z:-62.2,until:'Q.level.litCount>=3',max:10},{x:0,z:-62.9,act:true,expect:'Q.level.caveLit'},{x:-6.6,z:-64.6,until:"Q.level.gems.find(g=>g.id==='cave').taken",max:10}],'第四境·六五（带灯笼鱼点亮三盏灯座，光珠放上石台）');
   await p.evaluate(()=>__Q.step(1.5,{draw:false}));await shot('w4-cave');
   // 6. 上九：综——把石碑整块倒过来
-  await S([{x:0,z:-69.5},{x:0,z:-75.6,act:true}],'第四境·上九（把石碑倒过来）');
+  await S([{x:2,z:-65.6},{x:.6,z:-69.5},{x:0,z:-75.6,act:true}],'第四境·上九（把石碑倒过来）');
   const tab=await p.evaluate(()=>{__Q.step(1.6,{draw:false});return {lines:__Q.level.tablet.join(),method:__Q.level.method,codex:['cuo','zong','xiangying','weiji'].filter(c=>__Q.save.codex.includes(c))};});
   check('第四境·上九：石碑倒过来（综），既济 [阳阴阳阴阳阴] → 未济 [阴阳阴阳阴阳]，解锁"错卦""综卦""相应"图鉴',tab.lines==='0,1,0,1,0,1'&&tab.method==='zong'&&tab.codex.length===4,tab);
   await p.evaluate(()=>__Q.step(2.6));await shot('w5-xiangying');
@@ -85,7 +85,34 @@ async function checkCuo(p,check){
     Q.teleport(0,.3,-46.6);Q.step(.3,{draw:false});const held=L.pearl;const jl=L.jellies[1];Q.teleport(jl.pos.x,jl.pos.y-.4,jl.pos.z);Q.step(.1,{draw:false});return {held,after:L.pearl,clam:L.clams[2].open};});
   check('第四境·六五：被水母碰到，光珠会掉',j.held==='held'&&j.after==='free',j);
 }
-module.exports={runWeiji,checkCuo,swim};
+// 海底生物与新玩法（直接摆位置检查机制本身，路线另有自动通关）
+async function checkLife(p,check){
+  // 大鳐鱼：在岸边落到它背上，什么都不按，被驮过海沟
+  const m=await p.evaluate(()=>{const Q=__Q;Q.start(3);Q.step(.3,{draw:false});const L=Q.level,P=Q.player,M=L.life.manta;
+    for(let i=0;i<60*30&&!((Q.game.time%22)>.6&&(Q.game.time%22)<2.4);i++)Q.step(1/60,{draw:false});
+    Q.teleport(M.pos.x,M.pos.y+.5,M.pos.z);const f0=Q.game.falls;let rode=false;
+    for(let i=0;i<60*12;i++){Q.step(1/60,{draw:false});if(P.grounded&&P.ground===M.col)rode=true;const u=Q.game.time%22;if(u>11&&u<12.6)break;}
+    return {rode,z:+P.z.toFixed(1),fell:Q.game.falls-f0,zone:L.zone,shell:L.life.shells[4].taken};});
+  check('第四境·六三：落到大鳐鱼背上不用操作，被驮过海沟（顺手拿到它背上的贝壳）',m.rode&&m.z<-35.5&&m.fell===0&&m.shell,m);
+  // 震碎裂纹石、震醒海龟，钻进小洞拿贝壳
+  const g=await p.evaluate(()=>{const Q=__Q,L=Q.level,P=Q.player,life=L.life;const go=(x,y,z,s=.8)=>{Q.teleport(x,y,z);Q.step(s,{draw:false});};
+    go(0,1,-40);const out={};
+    go(-5.2,2.2,-38.6,.05);Q.slam();for(let i=0;i<120&&!P.grounded;i++)Q.step(1/60,{draw:false});Q.step(.3,{draw:false});out.rock=life.rocks[0].broken;
+    const n0=life.shellCount;for(let i=0;i<240&&life.shellCount===n0;i++)Q.step(1/60,{move:{x:-1,z:0},draw:false});out.grottoShell=life.shellCount-n0;
+    go(-3.6,2.2,-48.9,.05);Q.slam();for(let i=0;i<120&&!P.grounded;i++)Q.step(1/60,{draw:false});out.turtle=life.turtle.state;Q.step(5,{draw:false});out.turtleAfter=life.turtle.state;out.turtleY=+life.turtle.pos.y.toFixed(1);
+    const n1=life.shellCount;for(let i=0;i<300&&life.shellCount===n1;i++)Q.step(1/60,{move:{x:-1,z:0},draw:false});out.turtleShell=life.shellCount-n1;return out;});
+  check('第四境·九四："震"碎裂纹石、震醒海龟（它游开），钻进两个小洞各拿到一枚贝壳',g.rock&&g.grottoShell===1&&g.turtle==='wake'&&g.turtleAfter==='swim'&&g.turtleY>6&&g.turtleShell===1,g);
+  // 海葵弹起来、螃蟹钻沙、鲸游过
+  const t=await p.evaluate(()=>{const Q=__Q,L=Q.level,P=Q.player,life=L.life;const a=life.anemones[0];Q.teleport(a.x,1.6,a.z);let top=0;for(let i=0;i<150;i++){Q.step(1/60,{draw:false});top=Math.max(top,P.y);}
+    const c=life.crabs[0];Q.teleport(c.pos.x+1,0,c.pos.z);Q.step(.2,{draw:false});const hid=c.hide>0;
+    Q.teleport(-3,5,-22);Q.step(.5,{draw:false});return {bounce:+top.toFixed(2),crabHid:hid,whale:life.whale.on};});
+  check('第四境：落到海葵上会被弹起（>2 米）、螃蟹被吓得钻进沙里、游到海沟上方时头顶游过一头鲸',t.bounce>2&&t.crabHid&&t.whale,t);
+  // 12 枚贝壳都拿到：解锁"贝"，小狐狸戴上珊瑚发卡（存档记住）
+  const sh=await p.evaluate(()=>{const Q=__Q,L=Q.level,life=L.life;for(const s of life.shells){if(s.taken)continue;Q.teleport(s.pos.x,s.pos.y-.46,s.pos.z);Q.step(1/60,{draw:false});}
+    Q.step(.2,{draw:false});return {n:life.shellCount,total:life.shellTotal,bei:Q.save.codex.includes('bei'),pin:!!Q.save.flags.foxPin,hud:document.getElementById('shells').textContent};});
+  check('第四境：12 枚贝壳找齐，解锁"贝"图鉴，小狐狸戴上珊瑚发卡（记入存档）',sh.n===12&&sh.total===12&&sh.bei&&sh.pin,sh);
+}
+module.exports={runWeiji,checkCuo,checkLife,swim};
 
 if(require.main===module){
   const {chromium}=require('playwright'),path=require('node:path'),{pathToFileURL}=require('node:url'),fs=require('node:fs');
@@ -97,6 +124,6 @@ if(require.main===module){
     await runWeiji(p,check,async n=>{await p.evaluate(()=>{const Q=__Q,P=Q.player;Q.cam.focus.set(P.x,P.y+1.1,P.z);Q.step(.05);});await p.screenshot({path:path.join(out,n+'.png')});});
     await p.waitForFunction(()=>__Q.game.mode==='clear',null,{timeout:20000}).catch(()=>{});
     check('第四境：结算出现，第三颗星写"不被卷走"',await p.evaluate(()=>__Q.game.mode==='clear'&&/不被卷走/.test(document.getElementById('clear-stars').textContent)),await p.evaluate(()=>({levelTime:Math.round(__Q.game.levelTime)})));
-    await checkCuo(p,check);
+    await checkCuo(p,check);await checkLife(p,check);
     check('无运行时错误',errs.length===0,errs);await b.close();console.log(fails?'FAILED '+fails:'ALL PASSED');process.exit(fails?1:0);})().catch(e=>{console.error(e);process.exit(1);});
 }

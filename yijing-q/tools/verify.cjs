@@ -9,7 +9,7 @@ const root=path.join(__dirname,'..'),out=path.join(root,'docs','verification'),p
 const report={time:new Date().toISOString(),checks:[]};
 const check=(name,ok,detail)=>{report.checks.push({name,ok:!!ok,detail});console.log((ok?'PASS ':'FAIL ')+name+(detail!==undefined?'  '+JSON.stringify(detail):''));return ok;};
 
-const {route:runRoute}=require('./route.cjs');const {runJiji}=require('./verify-jiji.cjs');const {runWeiji,checkCuo}=require('./verify-weiji.cjs');const route=(p,points,label)=>runRoute(p,points,label,check);
+const {route:runRoute}=require('./route.cjs');const {runJiji}=require('./verify-jiji.cjs');const {runWeiji,checkCuo,checkLife}=require('./verify-weiji.cjs');const route=(p,points,label)=>runRoute(p,points,label,check);
 
 (async()=>{
   const server=spawn(process.execPath,[path.join(root,'server.cjs')],{cwd:root,stdio:['ignore','pipe','inherit']});
@@ -143,7 +143,7 @@ const {route:runRoute}=require('./route.cjs');const {runJiji}=require('./verify-
       check('选关：游戏中可直接跳到第三境',await p.evaluate(()=>__Q.game.levelIndex===2&&__Q.game.mode==='play'&&__Q.level.id==='jiji'));
       await p.click('#btn-levels');await p.waitForTimeout(300);await p.click('[data-goto="3"]');await p.waitForTimeout(300);
       check('选关：可直接跳到第四境（未济）',await p.evaluate(()=>__Q.game.levelIndex===3&&__Q.level.id==='weiji'&&document.querySelectorAll('#level-list [data-goto]').length===4));
-      await checkCuo(p,check);
+      await checkCuo(p,check);await checkLife(p,check);
       await p.click('#btn-home');await p.waitForTimeout(400);
       check('🏠 按钮：游戏中回到开始页面',await p.evaluate(()=>__Q.game.mode==='title'&&!document.getElementById('title').hidden&&__Q.sfx._debug().themeName==='title'));
       await p.screenshot({path:path.join(out,'11e-home.png')});

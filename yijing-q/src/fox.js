@@ -8,48 +8,73 @@ import * as THREE from '../vendor/three.module.js';
 //   耳朵、尾巴：有惯性，转弯往外甩，加速往后贴
 //   脸：眨眼，头先转向你，偶尔东张西望
 //   小性子：你停下来时它会转圈、翻跟头、追泡泡；拿到爻玉转个圈；说话时歪头；靠近水母会发抖
-export function createFox({world,envMap}){
+// 三种造型（正式用哪种由 style 指定）：
+//   mochi 糯米团：奶白、几乎不透明，大圆头、小鼓包嘴、大眼睛、短圆耳朵、腮边两撮软毛
+//   knot  红绳结：糯米团 + 脖子上一个红色中国结
+//   ice   冰糖：更透、偏冷白，肚子里透一点粉，眼睛更大
+export const FOX_STYLES=['mochi','knot','ice'];
+export function createFox({world,envMap,style='mochi'}){
   const V=(x,y,z)=>new THREE.Vector3(x,y,z);
+  const ICE=style==='ice',EYE=ICE?1.15:1;
   const root=new THREE.Group();const lean=new THREE.Group();root.add(lean);const squash=new THREE.Group();lean.add(squash);
 
   // ---------- 骨骼（绝对位置，自动换成相对父骨骼） ----------
-  const defs={body:[null,0,.2,0],head:['body',0,.34,.12],earL:['head',-.13,.6,.17],earR:['head',.13,.6,.17],eyeL:['head',-.09,.48,.4],eyeR:['head',.09,.48,.4],
-    pawFL:['body',-.1,.12,.16],pawFR:['body',.1,.12,.16],pawBL:['body',-.1,.12,-.17],pawBR:['body',.1,.12,-.17],tail:['body',0,.25,-.24],tailTip:['tail',0,.38,-.48]};
+  const defs={body:[null,0,.17,0],head:['body',0,.3,.08],earL:['head',-.15,.6,.06],earR:['head',.15,.6,.06],eyeL:['head',-.11,.44,.345],eyeR:['head',.11,.44,.345],
+    pawFL:['body',-.09,.1,.1],pawFR:['body',.09,.1,.1],pawBL:['body',-.09,.1,-.12],pawBR:['body',.09,.1,-.12],tail:['body',0,.2,-.17],tailTip:['tail',0,.42,-.5],pin:['head',.14,.66,.16]};
   const bones={},list=[],abs={};
   for(const [name,[parent,x,y,z]] of Object.entries(defs)){const b=new THREE.Bone();b.name=name;abs[name]=V(x,y,z);b.position.copy(abs[name]);if(parent)b.position.sub(abs[parent]);(parent?bones[parent]:squash).add(b);bones[name]=b;list.push(b);}
   const idx={};list.forEach((b,i)=>{idx[b.name]=i;});
 
-  // ---------- 材质 ----------
-  const skin=new THREE.MeshPhysicalMaterial({color:'#fffaf6',roughness:.16,metalness:0,clearcoat:1,clearcoatRoughness:.1,sheen:.6,sheenColor:new THREE.Color('#ffffff'),sheenRoughness:.4,transparent:true,opacity:.93,emissive:new THREE.Color('#eef4ff'),emissiveIntensity:.38,envMap,envMapIntensity:1.1});
-  const wet=new THREE.MeshPhysicalMaterial({color:'#bfe8ff',roughness:.08,clearcoat:1,clearcoatRoughness:.05,transparent:true,opacity:.66,emissive:new THREE.Color('#7fc4ef'),emissiveIntensity:.3,envMap,envMapIntensity:1.3});
-  const rim=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{color:{value:new THREE.Color('#ffffff')}},
+  // ---------- 材质：靠表面光泽和亮边显"软糖"，不靠透明（透明在水下会发灰） ----------
+  const skin=new THREE.MeshPhysicalMaterial({color:ICE?'#f7fbff':'#fff9f2',roughness:.2,metalness:0,clearcoat:1,clearcoatRoughness:.12,sheen:.8,sheenColor:new THREE.Color(ICE?'#e6f4ff':'#fff1e6'),sheenRoughness:.35,
+    transparent:true,opacity:ICE?.86:.985,emissive:new THREE.Color(ICE?'#e3efff':'#fff1e4'),emissiveIntensity:ICE?.4:.5,envMap,envMapIntensity:1});
+  const wet=new THREE.MeshPhysicalMaterial({color:'#bfe8ff',roughness:.08,clearcoat:1,clearcoatRoughness:.05,transparent:true,opacity:.7,emissive:new THREE.Color('#7fc4ef'),emissiveIntensity:.35,envMap,envMapIntensity:1.3});
+  const rim=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{color:{value:new THREE.Color(ICE?'#dff2ff':'#fff6ea')}},
     vertexShader:'#include <common>\n#include <skinning_pars_vertex>\nvarying vec3 vN;varying vec3 vV;void main(){\n#include <skinbase_vertex>\n#include <beginnormal_vertex>\n#include <skinnormal_vertex>\n#include <begin_vertex>\n#include <skinning_vertex>\nvec4 mv=modelViewMatrix*vec4(transformed,1.);vN=normalize(normalMatrix*objectNormal);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}',
-    fragmentShader:'uniform vec3 color;varying vec3 vN;varying vec3 vV;void main(){float f=pow(1.-max(dot(normalize(vN),normalize(vV)),0.),2.4);gl_FragColor=vec4(color*f*.75,1.);}'});
-  const pink=new THREE.MeshBasicMaterial({color:'#ffb3c4',transparent:true,opacity:.8,depthWrite:false}),dark=new THREE.MeshBasicMaterial({color:'#2b2320'}),shine=new THREE.MeshBasicMaterial({color:'#ffffff'});
+    fragmentShader:'uniform vec3 color;varying vec3 vN;varying vec3 vV;void main(){float f=pow(1.-max(dot(normalize(vN),normalize(vV)),0.),2.6);gl_FragColor=vec4(color*f*.7,1.);}'});
+  const pink=new THREE.MeshBasicMaterial({color:'#ffadc0',transparent:true,opacity:.85,depthWrite:false}),dark=new THREE.MeshBasicMaterial({color:'#231c1a'}),shine=new THREE.MeshBasicMaterial({color:'#ffffff'}),red=new THREE.MeshToonMaterial({color:'#e3473c',emissive:'#5a0e08',emissiveIntensity:.3});
 
   // ---------- 部件：几何体放在静止姿态的位置上，绑到骨骼 ----------
-  const pieces={skin:[],pink:[],dark:[],shine:[],wet:[]};
+  const pieces={skin:[],pink:[],dark:[],shine:[],wet:[],red:[],coral:[]};
   const tmp=new THREE.Object3D();
   function add(key,geo,bone,{p=[0,0,0],s=[1,1,1],r=[0,0,0]}={},weight=null){
     tmp.position.set(...p);tmp.scale.set(...s);tmp.rotation.set(...r);tmp.updateMatrix();const g=(geo.index?geo.toNonIndexed():geo.clone()).applyMatrix4(tmp.matrix);
+    if(g.attributes.uv)g.deleteAttribute('uv');
     const n=g.attributes.position.count,si=new Uint16Array(n*4),sw=new Float32Array(n*4);
     for(let i=0;i<n;i++){if(weight){const [a,b,w]=weight(g.attributes.position.getX(i),g.attributes.position.getY(i),g.attributes.position.getZ(i));si[i*4]=idx[a];si[i*4+1]=idx[b];sw[i*4]=1-w;sw[i*4+1]=w;}else{si[i*4]=idx[bone];sw[i*4]=1;}}
     g.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(si,4));g.setAttribute('skinWeight',new THREE.Float32BufferAttribute(sw,4));pieces[key].push(g);}
-  const sph=new THREE.SphereGeometry(.2,20,14),ear=new THREE.ConeGeometry(.11,.3,12);
-  add('skin',sph,'body',{p:[0,.2,-.02],s:[.9,.85,1.2]});
-  add('skin',sph,'head',{p:[0,.44,.2],s:[1.12,1,1.02]});
-  add('skin',new THREE.ConeGeometry(.115,.2,16),'head',{p:[0,.39,.41],s:[1,1,.75],r:[Math.PI/2,0,0]});add('skin',new THREE.SphereGeometry(.04,10,8),'head',{p:[0,.39,.5]});
-  add('dark',new THREE.SphereGeometry(.03,8,6),'head',{p:[0,.395,.535]});// 鼻子
+  const sph=new THREE.SphereGeometry(.2,24,16);
+  // 水滴形（圆底、圆尖）：耳朵和腮毛都用它，不用尖锥
+  const drop=(r,h)=>new THREE.LatheGeometry([[0,0],[r*.55,r*.12],[r*.9,r*.45],[r,r*.9],[r*.86,h*.5],[r*.55,h*.74],[r*.22,h*.92],[r*.06,h*.99],[0,h]].map(([x,y])=>new THREE.Vector2(x,y)),22);
+  const earGeo=drop(.12,.27),tuftGeo=drop(.05,.13);
+  add('skin',sph,'body',{p:[0,.17,-.01],s:[.78,.72,.88]});// 小圆身子
+  add('skin',sph,'head',{p:[0,.45,.12],s:[1.35,1.18,1.22]});// 大圆头（糯米团）
+  add('skin',new THREE.SphereGeometry(.085,16,12),'head',{p:[0,.385,.33],s:[1.25,.8,1]});// 小鼓包嘴
+  add('dark',new THREE.SphereGeometry(.03,10,8),'head',{p:[0,.41,.42],s:[1.2,.9,1]});// 小黑鼻头
+  add('dark',new THREE.TorusGeometry(.022,.006,4,10,Math.PI),'head',{p:[0,.36,.405],r:[0,0,Math.PI]});// ω 嘴
   for(const [s,side] of [[-1,'L'],[1,'R']]){
-    add('skin',ear,'ear'+side,{p:[s*.13,.7,.16],s:[1,1,.6],r:[-.12,0,-s*.32]});add('pink',new THREE.ConeGeometry(.065,.2,10),'ear'+side,{p:[s*.132,.69,.195],s:[1,1,.35],r:[-.12,0,-s*.32]});
-    add('dark',new THREE.SphereGeometry(.036,12,8),'eye'+side,{p:[s*.09,.48,.405],s:[1,1.35,.6]});add('shine',new THREE.SphereGeometry(.012,6,4),'eye'+side,{p:[s*.09+.012,.5,.43]});
-    add('pink',new THREE.CircleGeometry(.04,14),'head',{p:[s*.16,.4,.37],s:[1,.6,1],r:[0,s*.5,0]});
-    add('skin',new THREE.SphereGeometry(.065,10,8),'pawF'+side,{p:[s*.1,.05,.16],s:[1,.75,1.2]});add('skin',new THREE.SphereGeometry(.065,10,8),'pawB'+side,{p:[s*.1,.05,-.17],s:[1,.75,1.2]});}
-  // 大尾巴：一整条由细到粗再收尖，沿着长度在两节尾巴骨骼之间过渡，能弯
-  {const tg=new THREE.LatheGeometry([[0,0],[.06,.02],[.115,.1],[.15,.22],[.145,.33],[.1,.43],[.035,.49],[0,.5]].map(([r,y])=>new THREE.Vector2(r,y)),18);tg.rotateX(-1.05);
-    add('skin',tg,null,{p:[0,.25,-.24]},(x,y,z)=>{const t=THREE.MathUtils.clamp(-(z+.24)/.45,0,1);return ['tail','tailTip',t*t];});}
-  add('wet',new THREE.SphereGeometry(.075,14,10),'tailTip',{p:[0,.25+.5*Math.cos(1.05)-.01,-.24-.5*Math.sin(1.05)]});
+    // 短而圆的耳朵（球压扁成三角水滴）+ 粉色耳内
+    add('skin',earGeo,'ear'+side,{p:[s*.15,.57,.05],s:[1,1,.55],r:[-.12,0,-s*.42]});
+    add('pink',earGeo,'ear'+side,{p:[s*.165,.6,.095],s:[.58,.72,.2],r:[-.12,0,-s*.42]});
+    // 大圆眼睛 + 两个高光
+    add('dark',new THREE.SphereGeometry(.055*EYE,16,12),'eye'+side,{p:[s*.11,.44,.345],s:[1,1.15,.5]});
+    add('shine',new THREE.SphereGeometry(.019*EYE,8,6),'eye'+side,{p:[s*.11+.018,.465,.372]});add('shine',new THREE.SphereGeometry(.009*EYE,6,4),'eye'+side,{p:[s*.11-.016,.42,.372]});
+    add('pink',new THREE.CircleGeometry(.045,16),'head',{p:[s*.19,.375,.29],s:[1,.62,1],r:[0,s*.62,0]});// 腮红
+    // 腮边两撮软毛：狐狸的辨识度
+    add('skin',tuftGeo,'head',{p:[s*.255,.37,.13],s:[1,1,.7],r:[0,0,s*(Math.PI/2+.55)]});add('skin',tuftGeo,'head',{p:[s*.235,.31,.12],s:[.8,.8,.6],r:[0,0,s*(Math.PI/2+.95)]});
+    // 短胖小爪
+    add('skin',new THREE.SphereGeometry(.058,12,8),'pawF'+side,{p:[s*.09,.04,.1],s:[1,.72,1.15]});add('skin',new THREE.SphereGeometry(.058,12,8),'pawB'+side,{p:[s*.09,.04,-.12],s:[1,.72,1.15]});}
+  // 大尾巴：比身子还大，蓬松，往后上方翘；沿长度在两节尾巴骨骼之间过渡，能弯
+  {const tg=new THREE.LatheGeometry([[0,0],[.07,.02],[.14,.1],[.19,.24],[.185,.37],[.13,.49],[.05,.56],[0,.575]].map(([r,y])=>new THREE.Vector2(r,y)),28);tg.rotateX(-1.0);
+    add('skin',tg,null,{p:[0,.2,-.17]},(x,y,z)=>{const t=THREE.MathUtils.clamp(-(z+.17)/.5,0,1);return ['tail','tailTip',t*t];});
+    add('wet',new THREE.SphereGeometry(.09,16,12),'tailTip',{p:[0,.2+.56*Math.cos(1.0),-.17-.56*Math.sin(1.0)],s:[1,.9,1]});}// 尾巴尖：湿的（濡其尾）
+  if(style==='knot'){// 脖子上的红绳结：一圈红绳 + 胸前一个小结 + 两条穗子
+    add('red',new THREE.TorusGeometry(.17,.016,6,28),'body',{p:[0,.29,.05],s:[1,1,.95],r:[Math.PI/2-.25,0,0]});
+    add('red',new THREE.SphereGeometry(.035,10,8),'body',{p:[0,.255,.21]});
+    for(const s of [-1,1]){add('red',new THREE.TorusGeometry(.03,.012,6,12),'body',{p:[s*.045,.26,.205],r:[0,0,s*.4]});add('red',new THREE.CylinderGeometry(.008,.014,.08,6),'body',{p:[s*.018,.2,.215],r:[0,0,s*.25]});}}
 
+  // 珊瑚小发卡（找齐 12 枚贝壳的奖励）：别在右耳根，三根短枝 + 小圆头
+  for(const [dx,dy,rz,h] of [[0,0,-.2,.12],[.05,.02,-.8,.09],[-.04,.03,.5,.08]]){add('coral',new THREE.CylinderGeometry(.016,.024,h,6),'pin',{p:[.14+dx+Math.sin(-rz)*h/2,.66+dy+Math.cos(rz)*h/2,.16],r:[0,0,rz]});add('coral',new THREE.SphereGeometry(.026,8,6),'pin',{p:[.14+dx+Math.sin(-rz)*h,.66+dy+Math.cos(rz)*h,.16]});}
   root.updateMatrixWorld(true);const skeleton=new THREE.Skeleton(list);
   function merge(gs){let n=0;for(const g of gs)n+=g.attributes.position.count;const out=new THREE.BufferGeometry();
     for(const [name,size,Arr] of [['position',3,Float32Array],['normal',3,Float32Array],['skinIndex',4,Uint16Array],['skinWeight',4,Float32Array]]){const a=new Arr(n*size);let o=0;for(const g of gs){a.set(g.attributes[name].array,o);o+=g.attributes[name].array.length;}out.setAttribute(name,new THREE.BufferAttribute(a,size));}
@@ -57,8 +82,10 @@ export function createFox({world,envMap}){
   const mk=(geo,mat,order)=>{const m=new THREE.SkinnedMesh(geo,mat);m.frustumCulled=false;m.castShadow=false;m.renderOrder=order;squash.add(m);m.bind(skeleton);return m;};
   const skinGeo=merge(pieces.skin);
   mk(merge(pieces.dark),dark,0);mk(merge(pieces.shine),shine,0);mk(skinGeo,skin,2);mk(skinGeo,rim,3);mk(merge(pieces.pink),pink,3);mk(merge(pieces.wet),wet,2);
-  const core=new THREE.Mesh(new THREE.SphereGeometry(.13,14,10),new THREE.MeshBasicMaterial({color:'#ffc6d4',transparent:true,opacity:.42,depthWrite:false}));core.position.set(0,.02,-.02);core.renderOrder=1;bones.body.add(core);// 肚子里一点粉
-  root.scale.setScalar(1.2);
+  if(pieces.red.length)mk(merge(pieces.red),red,0);
+  const pinMesh=mk(merge(pieces.coral),new THREE.MeshToonMaterial({color:'#ff8fa6',emissive:'#6a1a2a',emissiveIntensity:.25}),0);pinMesh.visible=false;
+  if(ICE){const core=new THREE.Mesh(new THREE.SphereGeometry(.11,14,10),new THREE.MeshBasicMaterial({color:'#ffc6d4',transparent:true,opacity:.42,depthWrite:false}));core.position.set(0,0,-.01);core.renderOrder=1;bones.body.add(core);}// 肚子里一点粉
+  root.scale.setScalar(1.25);
 
   // ---------- 动作状态 ----------
   const sp=(k,d)=>({x:0,v:0,k,d,step(target,dt){this.v+=((target-this.x)*this.k-this.v*this.d)*dt;this.x+=this.v*dt;return this.x;}});
@@ -118,6 +145,7 @@ export function createFox({world,envMap}){
     bones.eyeL.scale.y+=(ey-bones.eyeL.scale.y)*Math.min(1,dt*40);bones.eyeR.scale.y=bones.eyeL.scale.y;
     return {jumped,speed};
   };
+  fox.setPin=v=>{pinMesh.visible=!!v;};
   fox.bones=bones;fox.squash=squash;fox.lean=lean;
   return fox;
 }
