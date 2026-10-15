@@ -1,5 +1,6 @@
 import * as THREE from '../../vendor/three.module.js';
 import {WEIJI_YAO} from '../lore.js';
+import {createFox} from '../fox.js';
 
 // 第四境 · 火水未济（第六十四卦，离上坎下）。整境在水下，水面上漂着河灯——"火在水上"。
 // 六段水域依次对应未济六爻的爻辞（对应关系是本作的联想，界面里标明"原创"）：
@@ -197,7 +198,7 @@ export function buildWeiji(ctx){
   bells.frustumCulled=tents.frustumCulled=false;world.root.add(bells,tents);
   const jellies=jellyDefs.map((d,i)=>({...d,a:i*2,pos:d.c.clone(),cd:0}));
   function jellyPos(j,i,t){const a=i*2+t*j.sp;j.pos.set(j.c.x+Math.cos(a)*j.r,j.c.y+Math.sin(t*1.7+i)*.45,j.c.z+Math.sin(a)*j.r);}
-  const tmp=V(),tan=V(),altarTop=V(0,1.6,-64.2);
+  const tmp=V(),tan=V(),altarTop=V(0,1.6,-64.2),tmp2=V(),foxTgt=V(),foxLook=V();
   const lanterns=school(9,'#3e5468',{scale:.7,lure:true});const lanternHome=V(6.6,2,-55);let lanternMode='home';
   lanterns.fish.forEach(f=>{f.pos.copy(lanternHome).add(f.off);});
   // 洞壁上的"光苔"：只有被光照到时才看得见（卡通材质，暗处几乎是黑的）
@@ -261,44 +262,13 @@ export function buildWeiji(ctx){
   hide(gems[3]);hide(gems[4]);hide(gems[5]);
 
   // ---------- 小狐狸：全程跟着游 ----------
-  const fox=(()=>{const root=new THREE.Group();scene.add(root);const body=new THREE.Group();root.add(body);
-    // 白色软糖小狐狸：乳白半透明 + 清漆高光 + 轮廓亮边，肚子里透出一点粉；尾巴尖是更透的冰蓝（濡其尾，湿了）
-    const env=ctx.envMap;
-    const skin=new THREE.MeshPhysicalMaterial({color:'#fffaf6',roughness:.16,metalness:0,clearcoat:1,clearcoatRoughness:.1,sheen:.6,sheenColor:new THREE.Color('#ffffff'),sheenRoughness:.4,transparent:true,opacity:.93,emissive:new THREE.Color('#eef4ff'),emissiveIntensity:.38,envMap:env,envMapIntensity:1.1});
-    const wet=new THREE.MeshPhysicalMaterial({color:'#bfe8ff',roughness:.08,clearcoat:1,clearcoatRoughness:.05,transparent:true,opacity:.62,emissive:new THREE.Color('#7fc4ef'),emissiveIntensity:.25,envMap:env,envMapIntensity:1.3});
-    const rimMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{color:{value:new THREE.Color('#ffffff')}},
-      vertexShader:'varying vec3 vN;varying vec3 vV;void main(){vec4 mv=modelViewMatrix*vec4(position,1.);vN=normalize(normalMatrix*normal);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}',
-      fragmentShader:'uniform vec3 color;varying vec3 vN;varying vec3 vV;void main(){float f=pow(1.-max(dot(normalize(vN),normalize(vV)),0.),2.4);gl_FragColor=vec4(color*f*.75,1.);}'});
-    const pink=new THREE.MeshBasicMaterial({color:'#ffb3c4',transparent:true,opacity:.75,depthWrite:false}),dark=new THREE.MeshBasicMaterial({color:'#2b2320'}),shine=new THREE.MeshBasicMaterial({color:'#ffffff'});
-    const tmp=new THREE.Group();root.add(tmp);const groups={skin:[],pink:[],dark:[],shine:[],tail:[],wet:[]};
-    const add=(key,geo,x,y,z,sx=1,sy=1,sz=1,rx=0,ry=0,rz=0)=>{const m=new THREE.Mesh(geo);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.rotation.set(rx,ry,rz);tmp.add(m);groups[key].push(m);};
-    const sph=new THREE.SphereGeometry(.2,20,14),ear=new THREE.ConeGeometry(.11,.3,12);
-    add('skin',sph,0,.2,-.02,.9,.85,1.2);// 身子
-    add('skin',sph,0,.44,.2,1.12,1,1.02);// 大头（Q 版比例）
-    add('skin',new THREE.ConeGeometry(.115,.2,16),0,.39,.41,1,1,.75,Math.PI/2,0,0);add('skin',new THREE.SphereGeometry(.04,10,8),0,.39,.5);// 尖尖的嘴筒（狐狸，不是小狗）
-    for(const s of [-1,1]){add('skin',ear,s*.13,.7,.16,1,1,.6,-.12,0,-s*.32);add('pink',new THREE.ConeGeometry(.065,.2,10),s*.132,.69,.195,1,1,.35,-.12,0,-s*.32);// 耳朵、粉色耳内
-      add('skin',new THREE.SphereGeometry(.065,10,8),s*.1,.05,.16,1,.75,1.2);add('skin',new THREE.SphereGeometry(.065,10,8),s*.1,.05,-.17,1,.75,1.2);// 小爪
-      add('dark',new THREE.SphereGeometry(.036,12,8),s*.09,.48,.405,1,1.35,.6);add('shine',new THREE.SphereGeometry(.012,6,4),s*.09+.012,.5,.43);// 眼睛、高光
-      add('pink',new THREE.CircleGeometry(.04,14),s*.16,.4,.37,1,.6,1,0,s*.5,0);}// 腮红
-    add('dark',new THREE.SphereGeometry(.03,8,6),0,.395,.535);// 鼻子
-    const tail=new THREE.Group();tail.position.set(0,.25,-.24);body.add(tail);
-    // 大尾巴：三节由细到粗再收尖，往后上方翘起；尾巴尖湿漉漉的
-    const tgeo=new THREE.LatheGeometry([[0,0],[.06,.02],[.115,.1],[.15,.22],[.145,.33],[.1,.43],[.035,.49],[0,.5]].map(([r,y])=>new THREE.Vector2(r,y)),18);tgeo.rotateX(-1.05);
-    const tailSkin=new THREE.Mesh(tgeo,skin);tail.add(tailSkin);
-    const tailTip=new THREE.Mesh(new THREE.SphereGeometry(.075,14,10),wet);tailTip.position.set(0,.5*Math.cos(1.05)-.01,-.5*Math.sin(1.05)+.0);tail.add(tailTip);
-    const core=new THREE.Mesh(new THREE.SphereGeometry(.13,14,10),new THREE.MeshBasicMaterial({color:'#ffc6d4',transparent:true,opacity:.42,depthWrite:false}));core.position.set(0,.22,0);core.renderOrder=1;body.add(core);// 肚子里一点粉
-    for(const [key,mat] of [['skin',skin],['pink',pink],['dark',dark],['shine',shine]]){const list=groups[key];if(!list.length)continue;const geo=world.mergeGeos(list,tmp);const m=new THREE.Mesh(geo,mat);body.add(m);
-      if(key==='skin'){m.renderOrder=2;const r=new THREE.Mesh(geo,rimMat);r.scale.setScalar(1.01);r.renderOrder=3;body.add(r);}else if(key==='pink')m.renderOrder=3;}
-    root.remove(tmp);tailSkin.renderOrder=2;tailTip.renderOrder=2;
-    root.traverse(o=>{if(o.isMesh)o.castShadow=false;});
-    root.scale.setScalar(1.2);
-    return {root,body,tail,pos:V(),vel:V(),say:0};})();
+  const fox=createFox({world,envMap:ctx.envMap});scene.add(fox.root);
   fox.pos.set(-1.4,1,14.6);fox.root.position.copy(fox.pos);
 
   // ---------- 状态 ----------
-  let ramp=0,now=0,zone=0,seen=new Set([0]),surge=0,surgeOn=false,firstSurge=true,slamOk=false,hintAt=-9,above=false,ended=false,welcomeT=1.2,lastJellyHint=-9;
+  let foxIdle=0,foxGems=0,ramp=0,now=0,zone=0,seen=new Set([0]),surge=0,surgeOn=false,firstSurge=true,slamOk=false,hintAt=-9,above=false,ended=false,welcomeT=1.2,lastJellyHint=-9;
   const zoneOf=z=>z>1?0:z>-14.6?1:z>-35.6?2:z>-52.2?3:z>-67.2?4:5;
-  const say=(k,text,ms=6500)=>{toast(text,ms);};
+  const say=(k,text,ms=6500)=>{toast(text,ms);fox.talk(Math.min(4,ms/1600));};
   const ZONE_SAY=[
     '小狐：卦辞说"小狐汔济，濡其尾"——小狐狸差一点就游过去了，尾巴却湿了。这回你陪我一起游吧！按住「跳」往上游，松开慢慢沉下去。',
     '九二 · 曳其轮，贞吉。小狐：暗流一阵一阵往回冲。来了就松手沉到底，像拖住车轮那样稳住；躲在大车轮后面最安全。',
@@ -457,20 +427,20 @@ export function buildWeiji(ctx){
         if(Math.abs(bPos[ix])>10.5||bPos[ix+2]>18||bPos[ix+2]<-82){if(i<NAMB)ambSpawn(i,true);else bPos[ix+1]=-999;}}
       bGeo.attributes.position.needsUpdate=true;
       // ----- 小狐狸 -----
-      {const fw=V(Math.sin(p.yaw),0,Math.cos(p.yaw)),side=V(fw.z,0,-fw.x);
-        let tgt=V(p.x,p.y,p.z).addScaledVector(fw,-1.3).addScaledVector(side,.95);tgt.y+=p.swim?.75:.2;
+      {const moving=Math.hypot(p.vx,p.vz)>.4||Math.abs(p.vy)>.6;foxIdle=moving?0:foxIdle+dt;const idle=foxIdle>2.5&&tab.demo<0;
+        const fw=tmp2.set(Math.sin(p.yaw),0,Math.cos(p.yaw)),sx=fw.z,sz=-fw.x;let tgt=foxTgt;
         if(tab.demo>=0)tgt.set(-2.6,2.4,-75.2);// 演示相应时，小狐狸在石碑旁边看
+        else if(idle){const a=t*.55;tgt.set(p.x+Math.cos(a)*1.7,p.y+(p.swim?.9+Math.sin(t*1.3)*.3:.2),p.z+Math.sin(a)*1.7);}// 你停下来：它绕着你转
+        else{const back=1.3+Math.sin(t*.53)*.35,side=.95+Math.sin(t*.7)*.3;tgt.set(p.x-fw.x*back+sx*side,p.y+(p.swim?.75+Math.sin(t*.9)*.2:.2),p.z-fw.z*back+sz*side);}// 跟着游，在身边飘来飘去
         const cy=physics.ceilingAt(tgt.x,tgt.z,tgt.y)-.9;if(tgt.y>cy)tgt.y=cy;
         if(physics.blocked(tgt.x,tgt.z,tgt.y,.25,.6)){tgt.set(p.x,p.y+(p.swim?1.25:.2),p.z);const cy2=physics.ceilingAt(tgt.x,tgt.z,p.y+1)-.7;if(tgt.y>cy2)tgt.y=Math.max(p.y+.4,cy2);}
         if(!p.swim&&p.y>SURF-.4){const g=physics.groundAt(tgt.x,tgt.z,tgt.y+1);tgt.y=g.col&&g.h>SURF?g.h:SURF-.2;}// 水面上：站在岛上或浮在水面
-        const d=fox.pos.distanceTo(tgt);
-        if(d>9){fox.pos.copy(tgt);fox.vel.set(0,0,0);bubble(tgt.x,tgt.y+.3,tgt.z,{n:10,spread:.8,up:1.2});}// 跟丢了（被暗流冲开、穿墙）：冒一串泡泡直接回到身边
-        else{const acc=tgt.clone().sub(fox.pos).multiplyScalar(16).addScaledVector(fox.vel,-7.5);fox.vel.addScaledVector(acc,dt);if(fox.vel.length()>9)fox.vel.setLength(9);fox.pos.addScaledVector(fox.vel,dt);}
-        fox.root.position.copy(fox.pos);const sp=Math.hypot(fox.vel.x,fox.vel.z);
-        const look=sp>.6?Math.atan2(fox.vel.x,fox.vel.z):Math.atan2(p.x-fox.pos.x,p.z-fox.pos.z);let dy=look-fox.root.rotation.y;dy=Math.atan2(Math.sin(dy),Math.cos(dy));fox.root.rotation.y+=dy*Math.min(1,dt*6);
-        fox.body.rotation.x=THREE.MathUtils.clamp(-fox.vel.y*.08,-.28,.28);fox.body.position.y=Math.sin(t*3.2)*.05;
-        fox.tail.rotation.y=Math.sin(t*(sp>1?9:3.5))*.45;fox.tail.rotation.x=-.1+Math.sin(t*2)*.08;
-        if(p.swim&&rng()<dt*1.6){const tp=fox.tail.getWorldPosition(V());bubble(tp.x,tp.y,tp.z,{n:1,spread:.1,up:.9,life:1.2});}}
+        // 心情：拿到爻玉转个圈；靠近水母、你被蛰到时发抖
+        const got=gems.filter(g=>g.taken).length;if(got>foxGems){foxGems=got;fox.doTrick('spin');}
+        let scared=p.stun>0;for(const j of jellies)if(j.pos.distanceTo(fox.pos)<2.4)scared=true;
+        const r=fox.update(dt,t,{target:tgt,look:foxLook.set(p.x,p.y+.6,p.z),idle,scared});
+        if(r.jumped)bubble(tgt.x,tgt.y+.3,tgt.z,{n:10,spread:.8,up:1.2});// 跟丢了：冒一串泡泡回到身边
+        if(p.swim&&rng()<dt*1.6){const tp=fox.bones.tailTip.getWorldPosition(foxLook);bubble(tp.x,tp.y,tp.z,{n:1,spread:.1,up:.9,life:1.2});}}
     },
     debugSolve(){gems.slice(0,3).forEach(g=>reveal(g));tab.lines=LINES.slice();drawTab();drawToggleBars();tab.solved=true;tab.method='cuo';tab.demo=-1;},
     _laneNear:laneNear,_laneSamples:laneSamples,_crack:crack,
