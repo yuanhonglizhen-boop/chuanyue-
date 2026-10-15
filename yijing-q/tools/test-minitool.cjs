@@ -38,6 +38,11 @@ async function open(b,{init='',label}){const ctx=await b.newContext(phone);await
         return {rise:+rise.toFixed(2),swim:P.swim!==undefined,calls,max:Math.max(...calls)};});
       check('第四境：水下能游（按住跳上浮），六段水域每帧绘制次数都 ≤ 100',w.rise>2&&w.max<=100,w);
       await p.screenshot({path:path.join(out,'08-weiji.png')});
+      // 提示框能关掉：点 ×
+      await p.evaluate(()=>{__Q.toast('九四 · 震用伐鬼方。这是一段很长的提示文字，用来测试能不能关掉。',60000);__Q.render();});await p.waitForTimeout(350);
+      await p.screenshot({path:path.join(out,'09-toast.png')});await p.tap('#toast-x');await p.evaluate(()=>__Q.render());await p.waitForTimeout(350);
+      const closed=await p.evaluate(()=>!document.getElementById('toast').classList.contains('show'));
+      check('提示框：点 × 立刻关掉',closed,await p.evaluate(()=>({cls:document.getElementById('toast').className,op:getComputedStyle(document.getElementById('toast')).opacity,txt:document.getElementById('toast-text').textContent.slice(0,12)})));
       // 存档：选角色写入容器 Storage，刷新后读回
       await p.evaluate(()=>{__Q.showTitle();__Q.selectCharacter('koi');});
       const saved=await p.evaluate(()=>window.__store['yijing-q-save-v1']||null);
@@ -61,6 +66,9 @@ async function open(b,{init='',label}){const ctx=await b.newContext(phone);await
       await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:195,y:650,id:2}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:195,y:710,id:2}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
       const dyaw=await p.evaluate(y0=>__Q.cam.targetYaw-y0,y0);
       check('横屏模式：页面整体旋转；手指往"上"推摇杆向前走，往"右"拖镜头右转（与竖屏手感一致）',/\bland\b/.test(cls)&&fwd>1&&dyaw<0,{cls,fwd:+fwd.toFixed(2),dyaw:+dyaw.toFixed(3)});
+      await p.evaluate(()=>{__Q.toast('横屏下的提示，也能关掉。',60000);__Q.render();});await p.waitForTimeout(350);
+      {const xb=await p.locator('#toast-x').boundingBox();await p.touchscreen.tap(xb.x+xb.width/2,xb.y+xb.height/2);await p.evaluate(()=>__Q.render());}
+      check('横屏模式：提示框点 × 也能关掉',await p.evaluate(()=>!document.getElementById('toast').classList.contains('show')),await p.evaluate(()=>{const b=document.getElementById('toast-x').getBoundingClientRect();const e=document.elementFromPoint(b.left+b.width/2,b.top+b.height/2);return {b:[b.left,b.top,b.width,b.height].map(Math.round),hit:e&&(e.id||e.className),cls:document.getElementById('toast').className};}));
       await p.evaluate(()=>{__Q.step(.1);document.getElementById('btn-lore').click();});await p.waitForTimeout(300);
       const lr=await p.evaluate(()=>{const r=document.getElementById('lore').getBoundingClientRect();return {l:r.left,t:r.top,r:r.right,b:r.bottom,W:innerWidth,H:innerHeight};});
       await p.screenshot({path:path.join(out,'07-land-lore.png')});

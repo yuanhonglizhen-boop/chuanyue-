@@ -28,7 +28,10 @@ const game={mode:'title',levelIndex:0,level:null,startedAt:0,levelTime:0,gemsByL
 let camBlocks=[],scene,physics,world,kit,ctrl,mascot,shadowBlob,sun,hemi,envMap;
 const cam={yaw:0,pitch:.42,dist:9,targetYaw:0,targetPitch:.42,targetDist:9,focus:new THREE.Vector3()};
 
-function toast(text,ms=3600){const el=$('toast');el.textContent=text;el.classList.add('show');game.toastUntil=performance.now()+ms;}
+function toast(text,ms=3600){const el=$('toast');$('toast-text').textContent=text;el.classList.add('show');game.toastUntil=performance.now()+ms;}
+// 提示随时能关：点 ×、点提示框任何地方，或按 Esc
+function hideToast(){$('toast').classList.remove('show');game.toastUntil=0;}
+$('toast').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();hideToast();});
 function burst(pos,opts){world?.burst(pos,opts);}
 function persist(){writeSave(save);}
 
@@ -90,7 +93,7 @@ addEventListener('keydown',e=>{if(e.target.closest?.('dialog'))return;keys.add(e
   if((e.code==='Space'||e.code==='KeyK')&&!e.repeat){jumpPressed=true;e.preventDefault();}
   if(e.code==='KeyE'&&!e.repeat)interact();
   if(e.code==='KeyF'&&!e.repeat)formKey();
-  if(e.code==='Escape')closeDialogs();});
+  if(e.code==='Escape'){if($('toast').classList.contains('show'))hideToast();closeDialogs();}});
 addEventListener('keyup',e=>keys.delete(e.code));
 addEventListener('blur',()=>{keys.clear();jumpHeld=false;});
 function inputVector(){
@@ -306,7 +309,7 @@ window.__Q={
   get game(){return game;},get level(){return game.level;},get player(){return ctrl.p;},get mascot(){return mascot;},get physics(){return physics;},camera,renderer,cam,save,sfx,
   start:startGame,loadLevel,openLevels,selectCharacter,openCodex,unlock,setChallenge,showTitle,setForm,cycleForm,nearestInteractable,
   step(seconds,{keys:k=[],jump=false,move=null,up=false,draw=true}={}){k.forEach(c=>keys.add(c));testMove=move;testUp=up;let first=true,n=0;for(let t=0;t<seconds-1e-9;t+=FIXED){if(first&&jump)jumpPressed=true;first=false;step(FIXED);if(++n%2===0&&game.level.frame)game.level.frame(FIXED*2,game.time,interp());}testMove=null;testUp=false;k.forEach(c=>keys.delete(c));if(draw){render(1/60);updateHud(true);}},
-  jump(){jumpPressed=true;},interact,slam(){formKey();},
+  jump(){jumpPressed=true;},interact,toast,slam(){formKey();},
   teleport(x,y,z){ctrl.place(x,y,z);Object.assign(prevP,{x,y,z});},
   render(dt=1/60){render(dt);updateHud(true);},manual:false,tick,
   ready:true,

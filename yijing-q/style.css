@@ -28,7 +28,12 @@ button{font:inherit;color:inherit;cursor:pointer}
 #prompt{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:999px;padding:8px 16px;z-index:6;font-size:14px;box-shadow:var(--shadow)}
 kbd{display:inline-block;min-width:22px;padding:1px 6px;border-radius:6px;background:#fff;color:var(--ink);font:600 12px/18px ui-monospace,monospace;text-align:center;border:1px solid #cfd8d4}
 #toast{position:fixed;left:50%;top:84px;transform:translate(-50%,-10px);opacity:0;transition:.25s;background:var(--paper);border-radius:16px;padding:10px 18px;box-shadow:var(--shadow);z-index:7;font-size:15px;max-width:calc(100% - 32px);text-align:center;pointer-events:none}
-#toast.show{opacity:1;transform:translate(-50%,0)}
+#toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+/* 提示可以随时关掉：点右边的 ×，或点提示框任何地方 */
+#toast{display:flex;align-items:center;pointer-events:none;cursor:pointer}
+#toast-text{flex:1;min-width:0}
+#toast-x{flex:none;width:28px;height:28px;margin:-4px -8px -4px 10px;border:0;border-radius:50%;background:rgba(36,65,60,.1);color:#24413c;font-size:18px;line-height:28px;padding:0;cursor:pointer}
+#toast-x:active{background:rgba(36,65,60,.22)}
 /* 进关卡片 */
 #card{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;opacity:0;z-index:8}
 #card.show{animation:card 3.4s ease forwards}#card h2{font-size:clamp(30px,6vw,52px);margin:14px 0 4px;letter-spacing:.2em;text-shadow:0 2px 18px rgba(255,255,255,.9)}#card p{margin:0;font-size:18px;letter-spacing:.3em;text-shadow:0 2px 12px #fff}
