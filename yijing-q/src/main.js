@@ -72,9 +72,10 @@ function loadLevel(i){
     onSlam:(col,still)=>{const p=ctrl.p;mascot.impulse(-6);sfx.thud();burst(new THREE.Vector3(p.x,p.y+.15,p.z),{color:'#e8fbff',n:18,speed:4,up:1.2,life:.6,size:.4,gravity:-1});game.level?.onSlam?.(p,col,still);},
     onLand:(col,impact,hop)=>{mascot.impulse(-Math.min(6,impact*.62));if(!hop&&impact>5){sfx.land(impact);burst(new THREE.Vector3(ctrl.p.x,ctrl.p.y+.05,ctrl.p.z),{color:'#f4ead2',n:8,speed:2,up:.8,life:.4,size:.3});}if(col.bounce){sfx.bounce();burst(new THREE.Vector3(col.x,col.top+.2,col.z),{color:'#ffffff',n:14,speed:2.5,up:1});}game.level?.onLand?.(col,impact);}});
   const ctx={world,kit,physics,scene,toast,sfx,rng,burst,lights:{hemi,sun},camera,get mascot(){return mascot;},get player(){return ctrl.p;},getForm:()=>game.form,setForm,openLore,unlock,challenge:game.challenge};
-  game.level=LEVELS[i](ctx);world.bake();camBlocks=physics.colliders.filter(c=>c.camBlock);cam.k=1;/* 静态装饰合并成少数网格 */
+  game.level=LEVELS[i](ctx);world.bake();camBlocks=physics.colliders.filter(c=>c.camBlock);cam.k=1;perf.grace=4;/* 静态装饰合并成少数网格 */
   const L=game.level;mascot.setTrigram(L.lines);
-  ctrl.place(L.spawn.x,L.spawn.y,L.spawn.z,L.spawn.yaw);
+  ctrl.place(L.spawn.x,L.spawn.y,L.spawn.z,L.spawn.yaw);Object.assign(prevP,{x:L.spawn.x,y:L.spawn.y,z:L.spawn.z,yaw:L.spawn.yaw});
+  try{renderer.compile(scene,camera);}catch{}/* 进关时一次编好所有着色器，别在路上边走边编、一卡一卡 */
   cam.yaw=cam.targetYaw=L.camYaw;cam.focus.set(L.spawn.x,L.spawn.y+1,L.spawn.z);
   game.levelTime=0;game.gemsByLevel[i]=0;game.levelFalls=0;game.timeLimit=game.challenge?L.timeLimit:0;
   $('level-glyph').innerHTML=glyph(L.lines);$('level-title').textContent=L.title;$('level-sub').textContent=L.subtitle;
@@ -226,10 +227,13 @@ function updateHud(force){
 }
 
 // ---------- 主循环 ----------
+// 画面插值：物理每秒固定 120 步，屏幕刷新是 60 / 90 / 120 帧不等；画的时候在上一步和这一步之间按比例取位置，不然会一顿一顿
+const prevP={x:0,y:0,z:0,yaw:0},ip={x:0,y:0,z:0,yaw:0,vx:0,vy:0,vz:0};
 const clock=new THREE.Clock();let acc=0,testMove=null,testUp=false;const FIXED=1/120;
 function step(dt){
   game.time+=dt;const L=game.level,p=ctrl.p,playing=game.mode==='play';if(playing)game.levelTime+=dt;
   const input=!playing?{x:0,z:0}:testMove?{...testMove}:inputVector();input.jump=playing&&jumpPressed;jumpPressed=false;input.up=playing&&(testUp||jumpHeld||keys.has('Space')||keys.has('KeyK'));
+  prevP.x=p.x;prevP.y=p.y;prevP.z=p.z;prevP.yaw=p.yaw;
   L.update(dt,game.time,p);
   ctrl.update(dt,input);
   if(p.y<L.killY){
@@ -244,16 +248,20 @@ function step(dt){
 }
 // 标题页：镜头靠近角色，画面偏移，让角色站在标题框旁边
 function framing(){const L=game.level;ctrl.place(L.spawn.x,L.spawn.y,L.spawn.z,0);const narrow=stage.clientWidth<=760;cam.targetYaw=cam.yaw=.25;cam.targetPitch=cam.pitch=narrow?.22:.16;cam.targetDist=cam.dist=narrow?7.5:4.4;/* 手机竖屏：拉远一些，角色站在标题框上方 */cam.focus.set(L.spawn.x,L.spawn.y+.75,L.spawn.z);}
+function interp(){const p=ctrl.p;let a=Math.min(1,Math.max(0,acc/FIXED));if(Math.hypot(p.x-prevP.x,p.y-prevP.y,p.z-prevP.z)>2.5)a=1;/* 瞬移、复活：不插值 */
+  ip.x=prevP.x+(p.x-prevP.x)*a;ip.y=prevP.y+(p.y-prevP.y)*a;ip.z=prevP.z+(p.z-prevP.z)*a;let dy=p.yaw-prevP.yaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));ip.yaw=prevP.yaw+dy*a;ip.vx=p.vx;ip.vy=p.vy;ip.vz=p.vz;ip.swim=p.swim;ip.grounded=p.grounded;return ip;}
+const camGoal=new THREE.Vector3(),camLead={x:0,z:0};
 function render(dt){
-  const p=ctrl.p;
+  const p=interp();
   mascot.root.position.set(p.x,p.y,p.z);mascot.root.rotation.y=game.mode==='title'?Math.sin(game.time*.6)*.35+.25:p.yaw;
   const g=physics.groundAt(p.x,p.z,p.y+.01);shadowBlob.visible=g.col!==null;if(g.col){shadowBlob.position.set(p.x,g.h+.02,p.z);const h=Math.max(0,p.y-g.h);shadowBlob.scale.setScalar(Math.max(.35,1-h*.12));shadowBlob.material.opacity=Math.max(.08,.3-h*.04);}
   const e=1-Math.exp(-dt*6);cam.yaw+=(cam.targetYaw-cam.yaw)*e;cam.pitch+=(cam.targetPitch-cam.pitch)*e;cam.dist+=(cam.targetDist-cam.dist)*e;
   if(keys.has('KeyQ'))cam.targetYaw+=dt*1.8;if(keys.has('KeyR'))cam.targetYaw-=dt*1.8;
-  if(game.mode!=='title')cam.focus.lerp(new THREE.Vector3(p.x+p.vx*.25,p.y+1.1,p.z+p.vz*.25),1-Math.exp(-dt*5));
-  camera.position.set(cam.focus.x+Math.sin(cam.yaw)*Math.cos(cam.pitch)*cam.dist,cam.focus.y+Math.sin(cam.pitch)*cam.dist,cam.focus.z+Math.cos(cam.yaw)*Math.cos(cam.pitch)*cam.dist);if(game.level.camBlock&&game.mode!=='title'){/* 镜头碰到墙：沿视线往回收，别钻进石壁里 */const f=cam.focus,P=camera.position;let k=1;
-    for(let i=1;i<=18;i++){const t=i/18,x=f.x+(P.x-f.x)*t,y=f.y+(P.y-f.y)*t,z=f.z+(P.z-f.z)*t;if(camBlocks.some(c=>y<c.top+.3&&y>c.bottom-.3&&physics.contains(c,x,z,.45))){k=(i-1)/18;break;}}
-    cam.k=k<(cam.k??1)?k:(cam.k??1)+(k-(cam.k??1))*Math.min(1,dt*3);P.lerpVectors(f,P,Math.max(.12,cam.k));}
+  if(game.mode!=='title'){const kl=1-Math.exp(-dt*6);camLead.x+=(p.vx*.25-camLead.x)*kl;camLead.z+=(p.vz*.25-camLead.z)*kl;/* 镜头往前看一点；撞墙急停时慢慢收回，不跳 */cam.focus.lerp(camGoal.set(p.x+camLead.x,p.y+1.1,p.z+camLead.z),1-Math.exp(-dt*5));}
+  camera.position.set(cam.focus.x+Math.sin(cam.yaw)*Math.cos(cam.pitch)*cam.dist,cam.focus.y+Math.sin(cam.pitch)*cam.dist,cam.focus.z+Math.cos(cam.yaw)*Math.cos(cam.pitch)*cam.dist);if(game.level.camBlock&&game.mode!=='title'){/* 镜头钻进高墙时，沿视线往回收到墙外（矮墙不管，镜头从上面越过去）；连续地收，不一档一档跳 */
+    const f=cam.focus,P=camera.position,inside=t=>{const x=f.x+(P.x-f.x)*t,y=f.y+(P.y-f.y)*t,z=f.z+(P.z-f.z)*t;for(const c of camBlocks)if(y<c.top+.3&&y>c.bottom-.3&&physics.contains(c,x,z,.45))return true;return false;};
+    let k=1;if(inside(1)){let lo=.1,hi=1;for(let i=0;i<10;i++){const m=(lo+hi)/2;if(inside(m))hi=m;else lo=m;}k=lo;}
+    const ck=cam.k??1;cam.k=ck+(k-ck)*Math.min(1,dt*(k<ck?14:3));P.lerpVectors(f,P,Math.max(.1,cam.k));}
   if(game.level.camMaxY){const my=game.level.camMaxY(p);if(camera.position.y>my)camera.position.y=my;}camera.lookAt(cam.focus);
   if(game.mode==='title'){const r={width:stage.clientWidth,height:stage.clientHeight},wide=r.width>760;camera.setViewOffset(r.width,r.height,wide?-r.width*.2:0,wide?0:r.height*.3,r.width,r.height);}
   sun.position.set(p.x-12,p.y+22,p.z+8);sun.target.position.set(p.x,p.y,p.z);
@@ -263,13 +271,16 @@ function render(dt){
 // 画质：0 = 默认（像素倍数 ≤1.5、总像素 ≤约 200 万、有阴影）；1 = 像素倍数 1；2 = 再关阴影。持续卡顿时自动逐级降档
 const perf={tier:0,acc:0,n:0,lost:0};
 function pixelRatio(w,h){const cap=perf.tier>=1?1:1.5;return Math.max(.5,Math.min(devicePixelRatio||1,cap,Math.sqrt((perf.tier>=1?1e6:2e6)/Math.max(1,w*h))));}
-function adapt(dt){if(game.mode!=='play'||perf.tier>=2)return;perf.acc+=dt;perf.n++;if(perf.acc<3)return;const avg=perf.acc/perf.n;perf.acc=0;perf.n=0;
+function adapt(dt){if(game.mode!=='play'||perf.tier>=2)return;if(perf.grace>0){perf.grace-=dt;return;}if(dt>.25)return;/* 刚进关的几秒（编译着色器）和偶发的长停顿不算 */perf.acc+=dt;perf.n++;if(perf.acc<3)return;const avg=perf.acc/perf.n;perf.acc=0;perf.n=0;
   if(avg>1/22){perf.tier++;if(perf.tier===1)resize();else{renderer.shadowMap.enabled=false;if(sun)sun.castShadow=false;scene.traverse(o=>{if(o.material)o.material.needsUpdate=true;});}}}
 function resize(){const r={width:stage.clientWidth||innerWidth,height:stage.clientHeight||innerHeight};renderer.setPixelRatio(pixelRatio(r.width,r.height));renderer.setSize(r.width,r.height,false);camera.aspect=r.width/Math.max(1,r.height);camera.updateProjectionMatrix();}
 addEventListener('resize',()=>applyOrientation());
 function frame(){
-  requestAnimationFrame(frame);if(window.__Q?.manual||document.hidden||perf.glLost){clock.getDelta();return;}/* 录制模式 / 切到后台 / 图形上下文丢失：不推进 */const dt=Math.min(clock.getDelta(),.1);adapt(dt);
+  requestAnimationFrame(frame);if(window.__Q?.manual||document.hidden||perf.glLost){clock.getDelta();return;}/* 录制模式 / 切到后台 / 图形上下文丢失：不推进 */tick(Math.min(clock.getDelta(),.1));}
+// 一帧：按真实间隔推进固定步长的物理，再画一帧（测试里也直接调用，模拟不同刷新率）
+function tick(dt){adapt(dt);
   if(game.mode!=='end'){acc+=dt;let n=0;while(acc>=FIXED&&n<16){step(FIXED);acc-=FIXED;n++;}if(n===16)acc=0;}
+  if(game.level.frame)game.level.frame(dt,game.time+acc,interp());/* 纯画面的东西（鱼群、气泡、水母……）每帧更新一次，用插值后的位置和时间 */
   if(game.mode==='title'&&Math.random()<dt*.25)mascot.cheer();
   render(dt);updateHud();
 }
@@ -294,9 +305,9 @@ addEventListener('pointerdown',()=>sfx.unlock(),{once:true});addEventListener('k
 window.__Q={
   get game(){return game;},get level(){return game.level;},get player(){return ctrl.p;},get mascot(){return mascot;},get physics(){return physics;},camera,renderer,cam,save,sfx,
   start:startGame,loadLevel,openLevels,selectCharacter,openCodex,unlock,setChallenge,showTitle,setForm,cycleForm,nearestInteractable,
-  step(seconds,{keys:k=[],jump=false,move=null,up=false,draw=true}={}){k.forEach(c=>keys.add(c));testMove=move;testUp=up;let first=true;for(let t=0;t<seconds-1e-9;t+=FIXED){if(first&&jump)jumpPressed=true;first=false;step(FIXED);}testMove=null;testUp=false;k.forEach(c=>keys.delete(c));if(draw){render(1/60);updateHud(true);}},
+  step(seconds,{keys:k=[],jump=false,move=null,up=false,draw=true}={}){k.forEach(c=>keys.add(c));testMove=move;testUp=up;let first=true,n=0;for(let t=0;t<seconds-1e-9;t+=FIXED){if(first&&jump)jumpPressed=true;first=false;step(FIXED);if(++n%2===0&&game.level.frame)game.level.frame(FIXED*2,game.time,interp());}testMove=null;testUp=false;k.forEach(c=>keys.delete(c));if(draw){render(1/60);updateHud(true);}},
   jump(){jumpPressed=true;},interact,slam(){formKey();},
-  teleport(x,y,z){ctrl.place(x,y,z);},
-  render(dt=1/60){render(dt);updateHud(true);},manual:false,
+  teleport(x,y,z){ctrl.place(x,y,z);Object.assign(prevP,{x,y,z});},
+  render(dt=1/60){render(dt);updateHud(true);},manual:false,tick,
   ready:true,
 };

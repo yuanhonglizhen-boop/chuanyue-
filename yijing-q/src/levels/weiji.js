@@ -172,6 +172,8 @@ export function buildWeiji(ctx){
   const tents=new THREE.InstancedMesh(tentGeo,new THREE.MeshBasicMaterial({color:'#ffd6f0',transparent:true,opacity:.6,depthWrite:false}),jellyDefs.length*5);
   bells.frustumCulled=tents.frustumCulled=false;world.root.add(bells,tents);
   const jellies=jellyDefs.map((d,i)=>({...d,a:i*2,pos:d.c.clone(),cd:0}));
+  function jellyPos(j,i,t){const a=i*2+t*j.sp;j.pos.set(j.c.x+Math.cos(a)*j.r,j.c.y+Math.sin(t*1.7+i)*.45,j.c.z+Math.sin(a)*j.r);}
+  const tmp=V(),tan=V(),altarTop=V(0,1.6,-64.2);
   const lanterns=school(9,'#d8ff9a',{basic:true,scale:.8});const lanternHome=V(6.6,2,-55);let lanternMode='home';
   lanterns.fish.forEach(f=>{f.pos.copy(lanternHome).add(f.off);});
   // 洞壁上的"光苔"：只有被光照到时才看得见（卡通材质，暗处几乎是黑的）
@@ -256,7 +258,7 @@ export function buildWeiji(ctx){
   fox.pos.set(-1.4,1,14.6);fox.root.position.copy(fox.pos);
 
   // ---------- 状态 ----------
-  let now=0,zone=0,seen=new Set([0]),surge=0,surgeOn=false,firstSurge=true,slamOk=false,hintAt=-9,above=false,ended=false,welcomeT=1.2,lastJellyHint=-9;
+  let ramp=0,now=0,zone=0,seen=new Set([0]),surge=0,surgeOn=false,firstSurge=true,slamOk=false,hintAt=-9,above=false,ended=false,welcomeT=1.2,lastJellyHint=-9;
   const zoneOf=z=>z>1?0:z>-14.6?1:z>-35.6?2:z>-52.2?3:z>-67.2?4:5;
   const say=(k,text,ms=6500)=>{toast(text,ms);};
   const ZONE_SAY=[
@@ -324,9 +326,7 @@ export function buildWeiji(ctx){
         default:return '上九：把"既济"石碑变成"未济"——整块倒过来（综），或把六爻一一变过来（错）。现在：'+(linesName(tab.lines)||'都不是')+'。';}
     },
     update(dt,t,p){
-      for(const c of cullable){const v=Math.hypot(c.p.x-p.x,c.p.z-p.z)<c.r;if(c.o.visible!==v&&!(c.o===pearl.group&&pearl.state==='clam'))c.o.visible=v;}
-      for(const g of gems)if(!hidden.has(g)&&!g.taken)g.group.visible=Math.hypot(g.pos.x-p.x,g.pos.z-p.z)<38;
-      now=t;cT.value=t;surfMat.uniforms.t.value=t;updateLamps(t);gate.update(dt,t);
+      now=t;gate.update(dt,t);
       // 水中 / 水面
       const breach=tab.solved&&tab.demo<0;
       p.swim=p.y<SURF-.35;p.ceilY=breach?Infinity:SURF-1.05;p.breachY=breach?SURF-1.3:Infinity;
@@ -337,7 +337,7 @@ export function buildWeiji(ctx){
       // ----- 水流 -----
       let fx=0,fy=0,fz=0;
       // 九二：一阵一阵的暗流往回冲（+z）
-      surge=(t%5.6);const was=surgeOn;surgeOn=surge<3;const ramp=Math.min(1,surge/.5,(3-surge)/.4);
+      surge=(t%5.6);const was=surgeOn;surgeOn=surge<3;ramp=Math.min(1,surge/.5,(3-surge)/.4);
       if(surgeOn&&!was&&zone===1){bubble(p.x,p.y+1,p.z-3,{n:6,spread:3,up:.2,vz:6});if(firstSurge){firstSurge=false;toast('暗流来了！松开「跳」沉到底，或者躲到车轮后面。',3800);}}
       if(surgeOn&&p.z<1&&p.z>-15.2){let k=p.grounded?.12:1;for(const w of wheels)if(Math.abs(p.x-w.x)<1.7&&p.z>w.z&&p.z<w.z+3.4&&p.y<2.7)k=0;fz+=5.4*Math.max(0,ramp)*k;}
       // 六三：海沟暗流往下拖；鱼群航道往前带；气泡柱往上托
@@ -346,48 +346,22 @@ export function buildWeiji(ctx){
         else{p.inLane=false;let col=false;for(const c of columns)if(Math.hypot(p.x-c.x,p.z-c.z)<c.r){col=true;fy+=3;}if(!col)fy-=8;}}
       else p.inLane=false;
       p.flowX=fx;p.flowY=fy;p.flowZ=fz;
-      // ----- 鱼群 -----
-      const tmp=V(),tan=V();
-      laneSchool.fish.forEach((f,i)=>{const u=(f.s+t*FISH_SPEED/loopLen)%1;loopCurve.getPointAt(u,tmp);loopCurve.getTangentAt(u,tan);tmp.add(f.off);tmp.y+=Math.sin(t*3+f.ph)*.08;laneSchool.set(i,tmp,tan);});laneSchool.done();
-      crack.t+=dt;crackSchool.fish.forEach((f,i)=>{let c,r;if(!crack.scattered){c=crack.pos;r=1.2;}else{c=crack.home;r=1.6;}
-        const a=t*(1.4+(i%5)*.12)+f.ph,want=V(c.x+Math.cos(a)*r*(.5+(i%3)*.3),c.y+Math.sin(a*1.3+f.ph)*r*.6,c.z+Math.sin(a)*r*(.5+(i%3)*.3));
-        if(crack.scattered&&crack.t<1.2){want.add(f.off.clone().multiplyScalar(6));}
-        if(!f.init){f.pos.copy(want);f.init=true;}const prev=f.pos.clone();f.pos.lerp(want,Math.min(1,dt*(crack.scattered?2.2:6)));const dir=f.pos.clone().sub(prev);if(dir.lengthSq()<1e-6)dir.set(-Math.sin(a),0,Math.cos(a));crackSchool.set(i,f.pos,dir);});crackSchool.done();
-      for(const d of deco){d.s.fish.forEach((f,i)=>{const a=t*d.sp+f.s*Math.PI*2,pos=V(d.c.x+Math.cos(a)*d.r+f.off.x,d.c.y+f.off.y+Math.sin(t+f.ph)*.2,d.c.z+Math.sin(a)*d.r+f.off.z);const dir=V(-Math.sin(a)*d.sp,0,Math.cos(a)*d.sp);
-        // 团子游近时散开
-        const dx=pos.x-p.x,dy=pos.y-p.y,dz=pos.z-p.z,dd=Math.hypot(dx,dy,dz);if(dd<2.5){pos.x+=dx/dd*(2.5-dd);pos.y+=dy/dd*(2.5-dd);pos.z+=dz/dd*(2.5-dd);}
-        d.s.set(i,pos,dir);});d.s.done();}
-      // ----- 贝壳 -----
-      for(const c of clams){if(c.open&&c.t<1){c.t=Math.min(1,c.t+dt*1.6);c.hinge.rotation.x=-c.t*1.05;}else if(!c.open){c.hinge.rotation.x=-Math.max(0,Math.sin(t*1.3+c.x))*.06;}}
       // ----- 光珠 -----
       if(pearl.noPick>0)pearl.noPick-=dt;
       if(pearl.state==='free'&&!(pearl.noPick>0)&&near(p,pearl.pos,1,1.5)){pearl.state='held';sfx.pickup();toast(zone===3?'拿到光珠了！前面石缝被鱼群堵着——在石缝前"震"一下。':'拿回光珠了。',3800);}
-      if(pearl.state==='held')pearl.pos.set(p.x+Math.sin(p.yaw)*.55,p.y+1.25+Math.sin(t*3)*.06,p.z+Math.cos(p.yaw)*.55);
-      if(pearl.state==='free'||pearl.state==='altar')pearl.pos.y+=Math.sin(t*2.2)*.0015;
-      pearl.group.position.copy(pearl.pos);pearl.glow.material.opacity=.75+Math.sin(t*4)*.15;
-      pearlLight.position.copy(pearl.pos);pearlLight.intensity=pearl.state==='clam'?0:pearl.state==='altar'?6:5;
-      // ----- 暗洞 -----
-      const inCave=p.z<-51.8&&p.z>-67.4;dark+=((inCave?(caveLit?.3:1):0)-dark)*Math.min(1,dt*2.5);
-      lights.hemi.intensity=HEMI*(1-.9*dark);lights.sun.intensity=SUN*(1-.92*dark);cK.value=1-dark;
-      if(!above){scene.fog.color.copy(fogW).lerp(fogDark,dark);scene.fog.far=50-30*dark;}
-      altarLight.intensity+=((caveLit?5:0)-altarLight.intensity)*Math.min(1,dt*1.5);
+      if(pearl.state==='held')pearl.pos.set(p.x+Math.sin(p.yaw)*.55,p.y+1.25,p.z+Math.cos(p.yaw)*.55);
       // 洞里的爻玉只有光照到才看得见
       if(hidden.has(gems[5])&&(caveLit||(pearl.state==='held'&&Math.hypot(p.x-(-7.4),p.z-(-65.2))<6))){reveal(gems[5]);toast('光照过去，角落里亮出一枚爻玉。');}
       // 石门
       if(caveLit&&!doorCol.disabled){doorCol.disabled=true;}
       if(caveLit&&door.position.y<6.4){door.position.y=Math.min(6.4,door.position.y+dt*2);}
-      // 水母
-      jellies.forEach((j,i)=>{j.a+=dt*j.sp;j.pos.set(j.c.x+Math.cos(j.a)*j.r,j.c.y+Math.sin(t*1.7+i)*.45,j.c.z+Math.sin(j.a)*j.r);const pulse=1+Math.sin(t*3.2+i)*.12;
-        dummy.position.copy(j.pos);dummy.rotation.set(0,0,0);dummy.scale.set(pulse,1/pulse,pulse);dummy.updateMatrix();bells.setMatrixAt(i,dummy.matrix);
-        for(let k=0;k<5;k++){const a=k/5*Math.PI*2;dummy.position.set(j.pos.x+Math.cos(a)*.28,j.pos.y,j.pos.z+Math.sin(a)*.28);dummy.rotation.set(Math.sin(t*2.4+k+i)*.25,0,Math.cos(t*2+k)*.25);dummy.scale.set(1,1.1+Math.sin(t*2+k)*.15,1);dummy.updateMatrix();tents.setMatrixAt(i*5+k,dummy.matrix);}
+      // 水母：位置只跟时间有关（逻辑和画面算出来的一样）
+      jellies.forEach((j,i)=>{jellyPos(j,i,t);
         j.cd=Math.max(0,j.cd-dt);
         if(j.cd<=0&&Math.hypot(p.x-j.pos.x,p.z-j.pos.z)<.85&&p.y+.5>j.pos.y-1.2&&p.y<j.pos.y+.4){j.cd=1.5;const dx=p.x-j.pos.x,dz=p.z-j.pos.z,l=Math.hypot(dx,dz)||1;p.vx=dx/l*4.5;p.vz=dz/l*4.5;p.vy=-1.5;p.stun=.45;sfx.land(8);ctx.mascot.impulse(-4);
           if(pearl.state==='held')dropPearl(p,'被水母蛰了一下，光珠掉了！游过去碰一下就能捡回来。');else if(t-lastJellyHint>4){lastJellyHint=t;toast('哎呀，水母！绕开它。');}}});
-      bells.instanceMatrix.needsUpdate=tents.instanceMatrix.needsUpdate=true;
       // 灯笼鱼：看见光珠就跟过来；光珠上了石台，就围着石台转
       if(lanternMode==='home'&&pearl.state==='held'&&Math.hypot(p.x-lanternHome.x,p.z-lanternHome.z)<7&&p.z<-51.8){lanternMode='follow';toast('一群灯笼鱼被光珠吸引，跟了过来。',3200);}
-      lanterns.fish.forEach((f,i)=>{const a=t*(1.6+i*.07)+f.ph,c=lanternMode==='home'?lanternHome:lanternMode==='altar'?V(0,1.6,-64.2):(pearl.state==='held'?pearl.pos:lanternHome),r=lanternMode==='altar'?1.6:.9;
-        const want=V(c.x+Math.cos(a)*r,c.y+Math.sin(a*1.4)*.4,c.z+Math.sin(a)*r);const prev=f.pos.clone();f.pos.lerp(want,Math.min(1,dt*2.5));const dir=f.pos.clone().sub(prev);if(dir.lengthSq()<1e-6)dir.set(-Math.sin(a),0,Math.cos(a));lanterns.set(i,f.pos,dir);});lanterns.done();
       // ----- 石碑 -----
       if(tab.flipping>0){tab.flipping=Math.max(0,tab.flipping-dt/1.1);const k=1-tab.flipping,e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;slab.rotation.z=e*Math.PI;slab.position.y=2.75+Math.sin(k*Math.PI)*.6;
         if(tab.flipping===0){slab.rotation.z=0;slab.position.y=2.75;tab.lines.reverse();drawTab();drawToggleBars();ctx.unlock('zong',true);burst(V(0,3,-77.4),{color:'#ffe9b0',n:18,speed:2.4,up:2,gravity:-1});checkTablet();}}
@@ -397,9 +371,42 @@ export function buildWeiji(ctx){
         arcs.forEach((a,i)=>{const st=1.4+i*1.6;if(tab.demo>st){if(!a.m.visible){a.m.visible=true;sfx.gem();toast('相应：'+PAIRS[i]+'，一阴一阳。',2600);}a.t=Math.min(1,(tab.demo-st)/.8);a.geo.setDrawRange(0,Math.floor(a.count*a.t/3)*3);}});
         if(tab.demo>6.6){tab.demo=-1;toast('"虽不当位，刚柔应也。"（未济《彖传》）——上九 · 濡其首：游到水面，按住「跳」冲出水面！',7000);sfx.gate();}}
       // ----- 水面之上 -----
-      const camAbove=ctx.camera.position.y>SURF;if(camAbove!==above){above=camAbove;setSky(above);scene.fog.color.copy(above?fogA:fogW);scene.fog.near=above?30:7;scene.fog.far=above?160:50;}
       if(!p.swim&&p.y>SURF-.4&&!ended&&tab.solved&&tab.demo<0&&p.grounded){ended=true;sfx.splash();burst(V(p.x,SURF+.2,p.z),{color:'#ffffff',n:18,speed:2.6,up:2.4});toast('浮出水面了！"火在水上"——水面上漂着一盏盏河灯。',5200);}
       if(tab.solved&&tab.demo<0&&gems.filter(g=>g.taken).length>=3&&!gate.active){gate.activate();}
+    },
+    // 纯画面：每帧一次，p 是插值后的位置，t 是插值后的时间
+    frame(dt,t,p){
+      for(const c of cullable){const v=Math.hypot(c.p.x-p.x,c.p.z-p.z)<c.r;if(c.o.visible!==v&&!(c.o===pearl.group&&pearl.state==='clam'))c.o.visible=v;}
+      for(const g of gems)if(!hidden.has(g)&&!g.taken)g.group.visible=Math.hypot(g.pos.x-p.x,g.pos.z-p.z)<38;
+      cT.value=t;surfMat.uniforms.t.value=t;updateLamps(t);
+      // ----- 鱼群 -----
+      laneSchool.fish.forEach((f,i)=>{const u=(f.s+t*FISH_SPEED/loopLen)%1;loopCurve.getPointAt(u,tmp);loopCurve.getTangentAt(u,tan);tmp.add(f.off);tmp.y+=Math.sin(t*3+f.ph)*.08;laneSchool.set(i,tmp,tan);});laneSchool.done();
+      crack.t+=dt;/* 震散计时 */crackSchool.fish.forEach((f,i)=>{let c,r;if(!crack.scattered){c=crack.pos;r=1.2;}else{c=crack.home;r=1.6;}
+        const a=t*(1.4+(i%5)*.12)+f.ph,want=tmp.set(c.x+Math.cos(a)*r*(.5+(i%3)*.3),c.y+Math.sin(a*1.3+f.ph)*r*.6,c.z+Math.sin(a)*r*(.5+(i%3)*.3));
+        if(crack.scattered&&crack.t<1.2){want.addScaledVector(f.off,6);}
+        if(!f.init){f.pos.copy(want);f.init=true;}tan.copy(f.pos);f.pos.lerp(want,Math.min(1,dt*(crack.scattered?2.2:6)));const dir=tan.subVectors(f.pos,tan);if(dir.lengthSq()<1e-6)dir.set(-Math.sin(a),0,Math.cos(a));crackSchool.set(i,f.pos,dir);});crackSchool.done();
+      for(const d of deco){d.s.fish.forEach((f,i)=>{const a=t*d.sp+f.s*Math.PI*2,pos=tmp.set(d.c.x+Math.cos(a)*d.r+f.off.x,d.c.y+f.off.y+Math.sin(t+f.ph)*.2,d.c.z+Math.sin(a)*d.r+f.off.z);const dir=tan.set(-Math.sin(a)*d.sp,0,Math.cos(a)*d.sp);
+        // 团子游近时散开
+        const dx=pos.x-p.x,dy=pos.y-p.y,dz=pos.z-p.z,dd=Math.hypot(dx,dy,dz);if(dd<2.5){pos.x+=dx/dd*(2.5-dd);pos.y+=dy/dd*(2.5-dd);pos.z+=dz/dd*(2.5-dd);}
+        d.s.set(i,pos,dir);});d.s.done();}
+      // ----- 贝壳 -----
+      for(const c of clams){if(c.open&&c.t<1){c.t=Math.min(1,c.t+dt*1.6);c.hinge.rotation.x=-c.t*1.05;}else if(!c.open){c.hinge.rotation.x=-Math.max(0,Math.sin(t*1.3+c.x))*.06;}}
+      // 光珠：拿在手里时跟着插值后的位置走，不然会一顿一顿
+      if(pearl.state==='held')pearl.group.position.set(p.x+Math.sin(p.yaw)*.55,p.y+1.25+Math.sin(t*3)*.06,p.z+Math.cos(p.yaw)*.55);else{pearl.group.position.copy(pearl.pos);if(pearl.state!=='clam')pearl.group.position.y+=Math.sin(t*2.2)*.08;}
+      pearl.glow.material.opacity=.75+Math.sin(t*4)*.15;pearlLight.position.copy(pearl.group.position);pearlLight.intensity=pearl.state==='clam'?0:pearl.state==='altar'?6:5;
+      // ----- 暗洞 -----
+      const inCave=p.z<-51.8&&p.z>-67.4;dark+=((inCave?(caveLit?.3:1):0)-dark)*Math.min(1,dt*2.5);
+      lights.hemi.intensity=HEMI*(1-.9*dark);lights.sun.intensity=SUN*(1-.92*dark);cK.value=1-dark;
+      if(!above){scene.fog.color.copy(fogW).lerp(fogDark,dark);scene.fog.far=50-30*dark;}
+      altarLight.intensity+=((caveLit?5:0)-altarLight.intensity)*Math.min(1,dt*1.5);
+      // 水母
+      jellies.forEach((j,i)=>{jellyPos(j,i,t);const pulse=1+Math.sin(t*3.2+i)*.12;
+        dummy.position.copy(j.pos);dummy.rotation.set(0,0,0);dummy.scale.set(pulse,1/pulse,pulse);dummy.updateMatrix();bells.setMatrixAt(i,dummy.matrix);
+        for(let k=0;k<5;k++){const a=k/5*Math.PI*2;dummy.position.set(j.pos.x+Math.cos(a)*.28,j.pos.y,j.pos.z+Math.sin(a)*.28);dummy.rotation.set(Math.sin(t*2.4+k+i)*.25,0,Math.cos(t*2+k)*.25);dummy.scale.set(1,1.1+Math.sin(t*2+k)*.15,1);dummy.updateMatrix();tents.setMatrixAt(i*5+k,dummy.matrix);}});
+      bells.instanceMatrix.needsUpdate=tents.instanceMatrix.needsUpdate=true;
+      lanterns.fish.forEach((f,i)=>{const a=t*(1.6+i*.07)+f.ph,c=lanternMode==='home'?lanternHome:lanternMode==='altar'?altarTop:(pearl.state==='held'?pearl.group.position:lanternHome),r=lanternMode==='altar'?1.6:.9;
+        const want=tmp.set(c.x+Math.cos(a)*r,c.y+Math.sin(a*1.4)*.4,c.z+Math.sin(a)*r);tan.copy(f.pos);f.pos.lerp(want,Math.min(1,dt*2.5));const dir=tan.subVectors(f.pos,tan);if(dir.lengthSq()<1e-6)dir.set(-Math.sin(a),0,Math.cos(a));lanterns.set(i,f.pos,dir);});lanterns.done();
+      const camAbove=ctx.camera.position.y>SURF;if(camAbove!==above){above=camAbove;setSky(above);scene.fog.color.copy(above?fogA:fogW);scene.fog.near=above?30:7;scene.fog.far=above?160:50;}
       // ----- 气泡 -----
       if(p.swim&&(p.vy>1.5||Math.hypot(p.vx,p.vz)>2.5)&&rng()<dt*8)bubble(p.x,p.y+.7,p.z,{n:1,spread:.3,up:1.4,life:1.4});
       for(const c of columns)if(rng()<dt*30)bubble(c.x,-6+rng()*6,c.z,{n:1,spread:c.r*1.2,up:6,life:3.5});
