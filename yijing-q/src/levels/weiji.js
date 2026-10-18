@@ -102,7 +102,7 @@ export function buildWeiji(ctx){
   function brain(x,z,color,r=.6){const m=S(world.mesh(new THREE.SphereGeometry(r,14,10),world.toon(color),x,r*.35,z));m.scale.y=.65;}
   [[-6,15,'#ff8a7a'],[6.5,9,'#ffb37a'],[-4,4,'#c58bf0'],[7,-3,'#ff8a7a'],[-7,-9,'#ffb37a'],[6.5,-38,'#c58bf0'],[-6.6,-45,'#ff8a7a'],[6,-49,'#ffb37a'],[-6,-70.5,'#c58bf0'],[-7.5,-73,'#ff8a7a']].forEach(([x,z,c])=>coral(x,z,c,1+rng()*.5));
   [[5.6,16,'#f5a3b5'],[-3,9.5,'#ffd27a'],[5,-12,'#f5a3b5'],[-5,-40.5,'#ffd27a'],[2.4,-48.6,'#f5a3b5'],[-4,-77,'#ffd27a']].forEach(([x,z,c])=>brain(x,z,c));
-  [[-5.5,12],[5,6],[-6,-4],[6,-10.5],[-7,-43],[7.2,-46],[-7.6,-57],[7.4,-64],[-6.8,-80]].forEach(([x,z])=>world.rock(x,0,z,1+rng()*.6,rng()<.5?ROCK:ROCK2));
+  [[-5.5,12],[5,6],[-6,-4],[6,-10.5],[-7,-43],[7.2,-46],[-6.9,-52.9],[7.4,-64],[-6.8,-80]].forEach(([x,z])=>world.rock(x,0,z,1+rng()*.6,rng()<.5?ROCK:ROCK2));
 
   // ---------- 气泡（一个 Points，一次绘制） ----------
   const NB=260,NAMB=200;const bPos=new Float32Array(NB*3),bVel=new Float32Array(NB*3),bLife=new Float32Array(NB);
@@ -221,7 +221,9 @@ export function buildWeiji(ctx){
     const m=new THREE.Mesh(new THREE.PlaneGeometry(3.6,2.25),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c),color:new THREE.Color(.1,.1,.1)}));m.position.set(-9.12,2.3,-58.4);m.rotation.y=Math.PI/2;world.root.add(m);cullable.push({o:m,p:V(-9,0,-58.4),r:28});return m;})();
   lanterns.fish.forEach(f=>{f.pos.copy(lanternHome).add(f.off);});
   // 洞壁上的"光苔"：只有被光照到时才看得见（卡通材质，暗处几乎是黑的）
-  {const m=world.toon('#d9ffcf',{emissive:'#000000'});for(const [x,y,z] of [[-8.9,2.4,-54],[-8.9,3,-58.5],[8.9,2.6,-61],[8.9,1.8,-56.5],[-8.9,1.6,-64]]){const b=S(world.mesh(new THREE.SphereGeometry(.35,10,8),m,x,y,z));b.scale.set(.35,1,1.4);b.castShadow=false;}}
+  // 一小片一小片的细点（不是一整块，免得看着像贝壳）；避开壁画（左壁 z -56.6～-60.2）和三盏灯座
+  {const m=world.toon('#d9ffcf',{emissive:'#000000'}),dot=new THREE.SphereGeometry(1,8,6);
+    for(const [x,y,z] of [[-9.05,2.2,-52.6],[-9.05,1.4,-65.6],[9.05,2.4,-61.9],[9.05,1.5,-65.2]])for(let i=0;i<8;i++){const r=.05+rng()*.07,b=S(world.mesh(dot,m,x,y+(rng()-.5)*.9,z+(rng()-.5)*1.1));b.scale.set(r*.5,r,r);b.castShadow=false;}}
   const altar=new THREE.Group();altar.position.set(0,0,-64.2);world.root.add(altar);
   S(world.mesh(new THREE.CylinderGeometry(.75,.95,.9,14),world.toon('#d9d0b8'),0,.45,0,altar));S(world.mesh(new THREE.TorusGeometry(.5,.07,6,20),world.toon('#b39a5c'),0,.92,0,altar)).rotation.x=Math.PI/2;
   physics.add({kind:'cyl',x:0,z:-64.2,r:.85,top:.92,bottom:-1,safe:true});
