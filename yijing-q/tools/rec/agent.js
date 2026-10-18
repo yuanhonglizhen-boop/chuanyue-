@@ -16,7 +16,7 @@
   const log=[{t:0,n:'playTheme',a:['title']},{t:0,n:'setLayer',a:[2]}];let capturing=false;const S=Q.sfx;
   const STATE=['playTheme','setLayer','setVoice','stopMusic'];
   S.unlock=()=>{};// 不在页面里真的发声：音轨录完后离线合成
-  for(const n of ['hop','jump','land','bounce','toggle','gem','pickup','solve','gate','portal','clear','fall','splash','ui',...STATE]){
+  for(const n of ['hop','jump','land','bounce','toggle','gem','pickup','solve','gate','portal','clear','fall','splash','ui','thud','bubble',...STATE]){
     const orig=S[n];S[n]=function(...a){if(capturing||STATE.includes(n))log.push({t:+videoT.toFixed(4),n,a});return orig.apply(S,a);};}
 
   // ---------- 叠加层：字幕、按键、倍速 ----------
@@ -42,7 +42,7 @@
     for(const k in on)keysEl.querySelector('.'+k).classList.toggle('on',on[k]);}
 
   // ---------- 操作封装（记录按键） ----------
-  const step=(dt,o={})=>{if(o.move&&(o.move.x||o.move.z)){lastMove=o.move;moveAge=0;}if(o.jump)flash.sp=.22;Q.step(dt,{...o,draw:false});};
+  const step=(dt,o={})=>{if(o.move&&(o.move.x||o.move.z)){lastMove=o.move;moveAge=0;}if(o.jump||o.up)flash.sp=Math.max(flash.sp,o.up?.05:.22);Q.step(dt,{...o,draw:false});};
   const interact=()=>{flash.e=.3;Q.interact();};
   const setForm=f=>{if(Q.game.form!==f){flash.f=.35;}Q.setForm(f);};
 
@@ -60,6 +60,7 @@
         if(w.waitLift&&T()<20&&!(Q.level._liftTop()<.45)){step(.05);return .05;}
         if(w.waitLiftTop&&T()<20&&!(Q.level._liftTop()>3.25)){step(.05);return .05;}
         if(w.waitSlider&&T()<20&&!(Q.level._sliderX()>.45&&Q.level._sliderX()<.75)){step(1/60);return 1/60;}
+        if(w.waitCalm&&T()<8&&Q.level.surging){step(1/30);return 1/30;}
         if(w.onSlider)w.x=Q.level._sliderX();
         cur.phase='main';if(w.jump){step(1/120,{jump:true,move:dir()});return 1/120;}return 0;
       case 'main':{
@@ -68,9 +69,13 @@
         const d=dir(),tol=w.tol??.45;
         if(cur.dj&&T()>.24){step(1/120,{jump:true,move:d});cur.dj=false;return 1/120;}
         if(Q.game.falls>cur.falls0)fail('fell',w);
-        const ok=w.until?eval(w.until):(d.l<tol&&P.grounded&&(w.minY===undefined||P.y>w.minY));
-        if(ok){cur.phase='act';return 0;}
-        step(1/60,{move:(!w.until&&d.l<tol)||(w.until&&d.l<(w.tol??.2))?{x:0,z:0}:d});return 1/60;}
+        // 水下：y 有值时按住上浮到这个高度，没有就松手下沉；lane 跟着鱼群航道的高度
+        let up=false;if(w.lane){const L=Q.level,n=L._laneNear(P.x,P.y+.45,P.z);up=P.y+.45<L._laneSamples[n.i].p.y;}else if(w.y!==undefined)up=P.y<w.y;
+        const ok=w.until?eval(w.until):(d.l<tol&&(w.y!==undefined?Math.abs(P.y-w.y)<.5||P.y>w.y:P.grounded)&&(w.minY===undefined||P.y>w.minY));
+        if(ok){cur.phase=w.slam?'slam':'act';return 0;}
+        step(1/60,{move:(!w.until&&d.l<tol)||(w.until&&d.l<(w.tol??.2))?{x:0,z:0}:d,up});return 1/60;}
+      case 'slam':flash.f=.4;Q.slam();cur.slamT=0;cur.phase='slamWait';return 0;
+      case 'slamWait':cur.slamT+=1/60;step(1/60);if((P.grounded&&cur.slamT>.25)||cur.slamT>2.2)cur.phase='act';return 1/60;
       case 'act':
         if(w.act&&(cur.actN===0||(cur.actN<3&&w.expect&&!eval(w.expect)))){interact();cur.actN++;step(.1);return .1;}
         if(w.expect&&!eval(w.expect))fail('expect',w);
