@@ -4,7 +4,7 @@
 // 2) 🚩 复位：回到之前站稳过的地方，爻玉不丢；3) 推着方向几秒没挪动，自动提示复位。
 // 可单独运行：npm run build && node tools/verify-stuck.cjs；也由 tools/verify.cjs 调用。
 async function runStuck(p,check){
-  for(const lv of [0,1,2,3]){
+  for(const lv of [0,1,2,3,4]){
     const r=await p.evaluate(lv=>{const Q=__Q;Q.manual=true;Q.start(lv);Q.step(.3,{draw:false});const P=Q.player,PH=Q.physics;
       const thin=PH.colliders.filter(c=>c.kind==='cyl'&&c.r<.9&&!c.noGround&&!c.bounce&&c.top-c.bottom>.6&&c.top<20);
       let tests=0;const stuck=[];

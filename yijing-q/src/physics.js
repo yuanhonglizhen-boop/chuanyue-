@@ -82,6 +82,7 @@ export function createController({physics,onLand,onHop,onJump,onSlam}){
     p.airTime=p.grounded?0:p.airTime+dt;
   }
   function update(dt,input){
+    if(p.locked){p.vy=0;p.grounded=true;p.ground=null;return;}/* 骑龙等过场：位置由关卡摆 */
     if(p.swim)return swimUpdate(dt,input);
     p.slamming=false;p.slamReq=false;
     // 移动平台：先随平台一起移动

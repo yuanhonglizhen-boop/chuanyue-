@@ -204,3 +204,18 @@ body.slam #btn-form{background:#a8e3f0}
 /* 复位键：卡住时闪一闪提醒 */
 #btn-reset.nudge{animation:nudge 1s ease-in-out 4;background:#ffe9a8}
 @keyframes nudge{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+
+/* 第五境：日晷与编磬 */
+#sundial{position:fixed;right:12px;top:104px;width:72px;height:72px;z-index:6;filter:drop-shadow(0 4px 10px rgba(36,65,60,.18));pointer-events:none}
+#chimes{position:fixed;left:50%;bottom:150px;transform:translateX(-50%);display:flex;align-items:center;z-index:7;background:var(--glass);backdrop-filter:blur(8px);padding:8px 10px;border-radius:20px;box-shadow:var(--shadow)}
+#chimes b{font-size:13px;margin:0 8px 0 4px;writing-mode:vertical-rl;letter-spacing:.2em;opacity:.7}
+#chimes button{position:relative;width:54px;height:54px;margin:0 3px;border:0;border-radius:14px 14px 22px 22px;font:700 20px/1 "Songti SC","Noto Serif SC",serif;color:#3a2a1a;touch-action:none;box-shadow:0 4px 0 rgba(36,65,60,.22)}
+#chimes button small{position:absolute;right:5px;bottom:4px;font:600 10px/1 system-ui,sans-serif;opacity:.5}
+#chimes button[data-note="0"]{background:#ffb39a}#chimes button[data-note="1"]{background:#ffe08a}#chimes button[data-note="2"]{background:#b6e8b8}#chimes button[data-note="3"]{background:#a9d4ff}#chimes button[data-note="4"]{background:#dcbcff}
+#chimes button.hit{animation:hit .25s ease-out}@keyframes hit{0%{transform:translateY(3px) scale(.94)}100%{transform:none}}
+@media (pointer:coarse){#chimes button small{display:none}}
+html.landui #sundial{top:58px;right:10px;width:60px;height:60px}
+html.landui #chimes{bottom:96px}
+
+@media (pointer:coarse){#chimes{bottom:228px}}
+html.landui #chimes{bottom:96px}

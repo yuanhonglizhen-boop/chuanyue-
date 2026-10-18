@@ -32,6 +32,8 @@
   <section class="objective"><span>目标</span><p id="objective"></p></section>
   <div id="prompt" hidden><kbd>E</kbd> <span id="prompt-label"></span></div>
   <div id="toast" role="status" aria-live="polite"><span id="toast-text"></span><button id="toast-x" aria-label="关掉这条提示" title="关掉提示（Esc）">×</button></div>
+  <canvas id="sundial" width="144" height="144" hidden title="日晷：指针走到「龙」字时，龙才会来"></canvas>
+  <div id="chimes" hidden><b>编磬</b><button data-note="0">宫<small>1</small></button><button data-note="1">商<small>2</small></button><button data-note="2">角<small>3</small></button><button data-note="3">徵<small>4</small></button><button data-note="4">羽<small>5</small></button></div>
   <div id="card"><div id="card-glyph"></div><h2 id="card-title"></h2><p id="card-sub"></p></div>
   <div id="fade"></div>
 
@@ -62,7 +64,7 @@
       </div>
       <button id="btn-start" class="primary">开始闯关 <span>→</span></button>
       <p class="pick-label chapters-label">或直接选关</p>
-      <div class="chapters"><button data-chapter="0">第一境 · 坎 <span class="stars"></span></button><button data-chapter="1">第二境 · 离 <span class="stars"></span></button><button data-chapter="2">第三境 · 既济 <span class="stars"></span></button><button data-chapter="3">第四境 · 未济 <span class="stars"></span></button></div>
+      <div class="chapters"><button data-chapter="0">第一境 · 坎 <span class="stars"></span></button><button data-chapter="1">第二境 · 离 <span class="stars"></span></button><button data-chapter="2">第三境 · 既济 <span class="stars"></span></button><button data-chapter="3">第四境 · 未济 <span class="stars"></span></button><button data-chapter="4">第五境 · 乾 <span class="stars"></span></button></div>
       <p class="keys">WASD / 方向键 移动 · 空格 跳（空中再按一次二段跳）· E 互动 · 拖动转镜头</p>
       <p class="keys keys-touch">左下摇杆 移动 · 「跳」按钮 跳（空中再按一次二段跳）· 「E」互动 · 右侧拖动转镜头</p>
       <div class="links"><button id="btn-orient" class="orient orient-pill">⇋ 横屏玩</button><button id="btn-codex-title" class="link">图鉴</button><button id="btn-about" class="link">关于考据</button></div>
@@ -81,7 +83,7 @@
 
   <section id="end" hidden>
     <div class="end-box">
-      <p class="eyebrow">四境已通</p>
+      <p class="eyebrow" id="end-eyebrow">四境已通</p>
       <h2>火在水上，未济——还没有完</h2>
       <div id="end-map" class="bagua"></div>
       <div class="stats"><div><b id="end-time">0:00</b><span>用时</span></div><div><b id="end-gems">0 / 24</b><span>爻玉</span></div><div><b id="end-stars">0 / 12</b><span>星</span></div></div>

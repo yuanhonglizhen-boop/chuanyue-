@@ -7,13 +7,14 @@ import {buildKan} from './levels/kan.js';
 import {buildLi} from './levels/li.js';
 import {buildJiji} from './levels/jiji.js';
 import {buildWeiji} from './levels/weiji.js';
+import {buildQian,NOTE_NAMES} from './levels/qian.js';
 import {LORE,TRIGRAMS,ABOUT,WORLD_ORDER} from './lore.js';
 import {CODEX,loadSave,writeSave} from './codex.js';
 import {createAudio} from './audio.js';
 import {occ,patchScene} from './occlude.js';
 
 const $=id=>document.getElementById(id);
-const LEVELS=[buildKan,buildLi,buildJiji,buildWeiji];const LEVEL_IDS=['kan','li','jiji','weiji'];
+const LEVELS=[buildKan,buildLi,buildJiji,buildWeiji,buildQian];const LEVEL_IDS=['kan','li','jiji','weiji','qian'];
 const save=loadSave();
 
 // ---------- 渲染器 ----------
@@ -25,7 +26,7 @@ const camera=new THREE.PerspectiveCamera(46,1,.1,600);
 const sfx=createAudio();sfx.setMuted(!save.sfx);sfx.setMusicMuted(!save.music);
 
 // ---------- 状态 ----------
-const game={mode:'title',levelIndex:0,level:null,startedAt:0,levelTime:0,gemsByLevel:[0,0,0,0],cleared:[false,false,false,false],starsRun:[null,null,null,null],form:'normal',time:0,toastUntil:0,lastGateHint:0,falls:0,levelFalls:0,challenge:save.challenge};
+const game={mode:'title',levelIndex:0,level:null,startedAt:0,levelTime:0,gemsByLevel:[0,0,0,0,0],cleared:[false,false,false,false,false],starsRun:[null,null,null,null,null],form:'normal',time:0,toastUntil:0,lastGateHint:0,falls:0,levelFalls:0,challenge:save.challenge};
 let camBlocks=[],scene,physics,world,kit,ctrl,mascot,shadowBlob,sun,hemi,envMap;
 const cam={yaw:0,pitch:.42,dist:9,targetYaw:0,targetPitch:.42,targetDist:9,focus:new THREE.Vector3()};
 
@@ -75,7 +76,7 @@ function loadLevel(i){
     onJump:(n)=>{mascot.impulse(n===1?2.6:3.2);sfx.jump(n);if(n===2)burst(new THREE.Vector3(ctrl.p.x,ctrl.p.y+.2,ctrl.p.z),{color:'#e9fff6',n:8,speed:1.6,up:.5,life:.45,size:.3,gravity:0});},
     onSlam:(col,still)=>{const p=ctrl.p;mascot.impulse(-6);sfx.thud();burst(new THREE.Vector3(p.x,p.y+.15,p.z),{color:'#e8fbff',n:18,speed:4,up:1.2,life:.6,size:.4,gravity:-1});game.level?.onSlam?.(p,col,still);},
     onLand:(col,impact,hop)=>{mascot.impulse(-Math.min(6,impact*.62));if(!hop&&impact>5){sfx.land(impact);burst(new THREE.Vector3(ctrl.p.x,ctrl.p.y+.05,ctrl.p.z),{color:'#f4ead2',n:8,speed:2,up:.8,life:.4,size:.3});}if(col.bounce){sfx.bounce();burst(new THREE.Vector3(col.x,col.top+.2,col.z),{color:'#ffffff',n:14,speed:2.5,up:1});}game.level?.onLand?.(col,impact);}});
-  const ctx={world,kit,physics,scene,toast,sfx,rng,burst,lights:{hemi,sun},camera,envMap,get mascot(){return mascot;},get player(){return ctrl.p;},getForm:()=>game.form,setForm,openLore,unlock,challenge:game.challenge,flags:save.flags,persist};
+  const ctx={world,kit,physics,scene,toast,sfx,rng,burst,lights:{hemi,sun},camera,envMap,get mascot(){return mascot;},get player(){return ctrl.p;},getForm:()=>game.form,setForm,openLore,unlock,challenge:game.challenge,flags:save.flags,persist,time:()=>game.time};
   game.level=LEVELS[i](ctx);world.bake();patchScene(scene,mascot.root);/* 挡视线的东西变半透明 */camBlocks=physics.colliders.filter(c=>c.camBlock);cam.k=1;perf.grace=4;/* 静态装饰合并成少数网格 */
   const L=game.level;mascot.setTrigram(L.lines);
   ctrl.place(L.spawn.x,L.spawn.y,L.spawn.z,L.spawn.yaw);Object.assign(prevP,{x:L.spawn.x,y:L.spawn.y,z:L.spawn.z,yaw:L.spawn.yaw});
@@ -95,6 +96,7 @@ addEventListener('keydown',e=>{if(e.target.closest?.('dialog'))return;keys.add(e
   if(e.code==='KeyE'&&!e.repeat)interact();
   if(e.code==='KeyF'&&!e.repeat)formKey();
   if(e.code==='KeyT'&&!e.repeat)resetToSafe();
+  if(/^Digit[1-5]$/.test(e.code)&&!e.repeat&&game.level?.chime)game.level.chime(+e.code[5]-1);
   if(e.code==='Escape'){if($('toast').classList.contains('show'))hideToast();closeDialogs();}});
 addEventListener('keyup',e=>keys.delete(e.code));
 addEventListener('blur',()=>{keys.clear();jumpHeld=false;});
@@ -164,7 +166,7 @@ function showCard(id){const c=CODEX.find(c=>c.id===id);
   $('codex-grid').hidden=true;$('codex-detail').hidden=false;$('codex-back').onclick=openCodex;sfx.ui();}
 $('btn-codex').onclick=openCodex;
 // 选关：随时跳到任意一境
-const LEVEL_INFO=[{lines:[0,1,0],title:'第一境 · 习坎',sub:'坎 · 水'},{lines:[1,0,1],title:'第二境 · 继明',sub:'离 · 火'},{lines:[1,0,1,0,1,0],title:'第三境 · 既济',sub:'水在火上'},{lines:[0,1,0,1,0,1],title:'第四境 · 未济',sub:'火在水上'}];
+const LEVEL_INFO=[{lines:[0,1,0],title:'第一境 · 习坎',sub:'坎 · 水'},{lines:[1,0,1],title:'第二境 · 继明',sub:'离 · 火'},{lines:[1,0,1,0,1,0],title:'第三境 · 既济',sub:'水在火上'},{lines:[0,1,0,1,0,1],title:'第四境 · 未济',sub:'火在水上'},{lines:[1,1,1,1,1,1],title:'第五境 · 乾（试玩）',sub:'时乘六龙'}];
 function openLevels(){
   $('level-list').innerHTML=LEVEL_INFO.map((L,i)=>{const id=LEVEL_IDS[i],st=save.stars[id]||0,best=save.best[id];
     return '<button data-goto="'+i+'">'+glyph(L.lines)+'<span><b>'+L.title+'</b><small>'+L.sub+(best?' · 最佳 '+fmt(best):'')+'</small></span><em>'+'★'.repeat(st)+'☆'.repeat(3-st)+'</em></button>';}).join('');
@@ -187,6 +189,8 @@ function resetToSafe(){if(game.mode!=='play')return false;const p=ctrl.p,L=game.
   stuck.t=0;stuck.ref=null;$('btn-reset').classList.remove('nudge');mascot.impulse(-3);sfx.portal();burst(new THREE.Vector3(spot.x,spot.y+.5,spot.z),{color:'#ffffff',n:14,speed:2,up:2});
   toast('已复位到刚才站稳的地方，进度都还在。',2600);return true;}
 $('btn-reset').onclick=()=>resetToSafe();
+// 编磬（第五境）：五个音
+document.querySelectorAll('#chimes [data-note]').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();if(game.level?.chime)game.level.chime(+b.dataset.note);b.classList.remove('hit');void b.offsetWidth;b.classList.add('hit');}));
 // 卡住了自动提示：一直在推方向却几乎没挪动，提示用 🚩 复位
 const stuck={t:0,ref:null,hintAt:-99};
 function watchStuck(dt,input){const p=ctrl.p;if(game.mode!=='play'||Math.hypot(input.x,input.z)<.3||p.stun>0){stuck.t=0;stuck.ref=null;return;}
@@ -200,7 +204,7 @@ document.querySelectorAll('dialog').forEach(d=>d.querySelectorAll('[data-close]'
 function setChallenge(on){game.challenge=on;save.challenge=on;persist();document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.mode==='challenge')===on)));$('mode-desc').textContent=on?'挑战：每境限时；落水回到本境起点；火种只燃 18 秒。':'普通：落水回到最近站稳处，不限时。';}
 document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{setChallenge(b.dataset.mode==='challenge');sfx.ui();});
 document.querySelectorAll('[data-char]').forEach(b=>b.onclick=()=>{sfx.unlock();selectCharacter(b.dataset.char);});
-function startGame(i=0){sfx.unlock();$('title').hidden=true;$('end').hidden=true;$('clear').hidden=true;document.body.classList.remove('titling');camera.clearViewOffset();game.mode='play';game.startedAt=performance.now();game.cleared=[false,false,false,false];game.starsRun=[null,null,null,null];game.gemsByLevel=[0,0,0,0];
+function startGame(i=0){sfx.unlock();$('title').hidden=true;$('end').hidden=true;$('clear').hidden=true;document.body.classList.remove('titling');camera.clearViewOffset();game.mode='play';game.startedAt=performance.now();game.cleared=[false,false,false,false,false];game.starsRun=[null,null,null,null,null];game.gemsByLevel=[0,0,0,0,0];
   cam.targetDist=cam.dist=9;cam.targetPitch=cam.pitch=.42;loadLevel(i);showLevelCard();}
 $('btn-start').onclick=()=>startGame(0);
 function renderChapterStars(){document.querySelectorAll('[data-chapter]').forEach(b=>{const id=LEVEL_IDS[b.dataset.chapter],s=save.stars[id]||0;b.querySelector('.stars').textContent='★'.repeat(s)+'☆'.repeat(3-s);});}
@@ -226,9 +230,9 @@ function nextLevel(){
   setTimeout(()=>{if(game.levelIndex+1<LEVELS.length){game.mode='play';loadLevel(game.levelIndex+1);showLevelCard();}else showEnd();$('fade').classList.remove('on');},900);
 }
 function showEnd(){
-  game.mode='end';sfx.playTheme('end');sfx.setLayer(2);const secs=(performance.now()-game.startedAt)/1000;
+  game.mode='end';$('end-eyebrow').textContent=['','一','二','三','四','五','六'][LEVELS.length]+'境已通';sfx.playTheme('end');sfx.setLayer(2);const secs=(performance.now()-game.startedAt)/1000;
   $('end-time').textContent=fmt(secs);$('end-gems').textContent=game.gemsByLevel.reduce((a,b)=>a+b,0)+' / '+LEVELS.length*6;$('end-stars').textContent=game.starsRun.reduce((a,b)=>a+(b||0),0)+' / '+LEVELS.length*3;
-  $('end-map').innerHTML=WORLD_ORDER.map((id,k)=>{const T=TRIGRAMS[id],a=k/8*Math.PI*2,x=50+Math.sin(a)*38,y=50-Math.cos(a)*38,done=(id==='kan'&&game.cleared[0])||(id==='li'&&game.cleared[1]);
+  $('end-map').innerHTML=WORLD_ORDER.map((id,k)=>{const T=TRIGRAMS[id],a=k/8*Math.PI*2,x=50+Math.sin(a)*38,y=50-Math.cos(a)*38,done=(id==='kan'&&game.cleared[0])||(id==='li'&&game.cleared[1])||(id==='qian'&&game.cleared[4]);
     return '<div class="node'+(done?' done':'')+'" style="left:'+x+'%;top:'+y+'%">'+glyph(T.lines)+'<b>'+T.name+'</b><small>'+T.image+' · '+T.dir+'</small></div>';}).join('')+'<div class="hub">'+(game.cleared[2]?'<span class="hubhex">'+glyph([1,0,1,0,1,0])+(game.cleared[3]?glyph([0,1,0,1,0,1]):'')+'</span><br>既济'+(game.cleared[3]?' · 未济':' · 水在火上')+'<br>':'')+'后天八卦方位<br><small>北在上</small></div>';
   $('end').hidden=false;
 }
@@ -238,7 +242,7 @@ function showTitle(){game.mode='title';$('end').hidden=true;$('clear').hidden=tr
 // ---------- HUD ----------
 let lastObjective='';
 function updateHud(force){
-  const L=game.level;const got=L.gems.filter(g=>g.taken).length;$('gems').textContent=got+' / '+L.gems.length;$('shells-box').hidden=!L.shellTotal;if(L.shellTotal)$('shells').textContent=L.shellCount+' / '+L.shellTotal;
+  const L=game.level;const got=L.gems.filter(g=>g.taken).length;$('gems').textContent=got+' / '+L.gems.length;$('shells-box').hidden=!L.shellTotal;$('sundial').hidden=!(L.id==='qian'&&game.mode==='play');{const on=!!L.chimeOn&&game.mode==='play';if($('chimes').hidden===on)$('chimes').hidden=!on;}if(L.shellTotal)$('shells').textContent=L.shellCount+' / '+L.shellTotal;
   const o=L.objective();if(o!==lastObjective||force){$('objective').textContent=o;lastObjective=o;}
   const it=game.mode==='play'?nearestInteractable():null;$('prompt').hidden=!it;if(it)$('prompt-label').textContent=it.label;$('btn-act').classList.toggle('ready',!!it);
   if(game.challenge){const left=game.timeLimit-game.levelTime;$('timer').textContent='⏱ '+fmt(left);$('timer').classList.toggle('low',left<30);}

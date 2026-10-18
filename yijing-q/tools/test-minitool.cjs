@@ -37,6 +37,10 @@ async function open(b,{init='',label}){const ctx=await b.newContext(phone);await
         for(const [x,y,z] of [[0,0,14],[0,3,-6],[-3,5,-22],[0,0,-42],[0,0,-58],[0,0,-72],[5,15,-78]]){Q.teleport(x,y,z);Q.step(.3,{draw:false});Q.cam.focus.set(x,y+1,z);Q.render();calls.push(Q.renderer.info.render.calls);}
         return {rise:+rise.toFixed(2),swim:P.swim!==undefined,calls,max:Math.max(...calls)};});
       check('第四境：水下能游（按住跳上浮），六段水域每帧绘制次数都 ≤ 100',w.rise>2&&w.max<=100,w);
+      const q=await p.evaluate(()=>{const Q=__Q;Q.start(4);Q.step(.5,{draw:false});const calls=[];
+        for(const [x,y,z] of [[0,.6,12],[0,1.2,-20],[0,1.6,-40],[0,9.6,-50]]){Q.teleport(x,y,z);Q.step(.3,{draw:false});for(const yaw of [0,3.14]){Q.cam.yaw=Q.cam.targetYaw=yaw;Q.cam.focus.set(x,y+1,z);Q.render();calls.push(Q.renderer.info.render.calls);}}
+        return {calls,max:Math.max(...calls),sundial:!document.getElementById('sundial').hidden};});
+      check('第五境（试玩）：日晷显示，每帧绘制次数 ≤ 100',q.max<=100&&q.sundial,q);
       await p.screenshot({path:path.join(out,'08-weiji.png')});
       // 提示框能关掉：点 ×
       await p.evaluate(()=>{__Q.toast('九四 · 震用伐鬼方。这是一段很长的提示文字，用来测试能不能关掉。',60000);__Q.render();});await p.waitForTimeout(350);

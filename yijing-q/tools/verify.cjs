@@ -9,7 +9,7 @@ const root=path.join(__dirname,'..'),out=path.join(root,'docs','verification'),p
 const report={time:new Date().toISOString(),checks:[]};
 const check=(name,ok,detail)=>{report.checks.push({name,ok:!!ok,detail});console.log((ok?'PASS ':'FAIL ')+name+(detail!==undefined?'  '+JSON.stringify(detail):''));return ok;};
 
-const {route:runRoute}=require('./route.cjs');const {runJiji}=require('./verify-jiji.cjs');const {runWeiji,checkCuo,checkLife}=require('./verify-weiji.cjs');const {runStuck}=require('./verify-stuck.cjs');const route=(p,points,label)=>runRoute(p,points,label,check);
+const {route:runRoute}=require('./route.cjs');const {runJiji}=require('./verify-jiji.cjs');const {runWeiji,checkCuo,checkLife}=require('./verify-weiji.cjs');const {runStuck}=require('./verify-stuck.cjs');const {runQian}=require('./verify-qian.cjs');const route=(p,points,label)=>runRoute(p,points,label,check);
 
 (async()=>{
   const server=spawn(process.execPath,[path.join(root,'server.cjs')],{cwd:root,stdio:['ignore','pipe','inherit']});
@@ -120,9 +120,16 @@ const {route:runRoute}=require('./route.cjs');const {runJiji}=require('./verify-
       await p.waitForFunction(()=>__Q.game.mode==='clear',null,{timeout:60000});
       check('第四境：结算，解锁"未济""错卦""综卦""相应"图鉴',await p.evaluate(()=>['weiji','cuo','zong','xiangying'].every(c=>__Q.save.codex.includes(c))&&__Q.save.stars.weiji>=1));
       await p.screenshot({path:path.join(out,'w8-clear.png')});await p.click('#btn-next');
+      // 第五境：乾（试玩）
+      await p.waitForFunction(()=>__Q.game.levelIndex===4&&__Q.game.mode==='play',null,{timeout:60000});await p.waitForTimeout(800);
+      check('第五境：进入，音乐切换为乾主题（宫调），右上角出现日晷',await p.evaluate(()=>__Q.sfx._debug().themeName==='qian'&&!document.getElementById('sundial').hidden));
+      await runQian(p,check,async n=>{await p.evaluate(()=>{const Q=__Q,P=Q.player;Q.cam.focus.set(P.x,P.y+1.1,P.z);Q.step(.05);});await p.screenshot({path:path.join(out,n+'.png')});});
+      await p.waitForFunction(()=>__Q.game.mode==='clear',null,{timeout:60000});
+      check('第五境：结算，解锁"乾""同声相应"图鉴',await p.evaluate(()=>['qian','tongsheng'].every(c=>__Q.save.codex.includes(c))&&__Q.save.stars.qian>=1));
+      await p.click('#btn-next');
       await p.waitForFunction(()=>__Q.game.mode==='end',null,{timeout:60000});await p.waitForTimeout(400);
       const end=await p.evaluate(()=>({mode:__Q.game.mode,cleared:__Q.game.cleared,gems:document.getElementById('end-gems').textContent,map:[...document.querySelectorAll('#end-map .node.done > b')].map(b=>b.textContent),hub:document.querySelector('#end-map .hub').textContent}));
-      check('四境通关：出现结局与八卦方位图（坎、离点亮，中央显示既济、未济），爻玉总数 /24',end.mode==='end'&&end.map.join()==='坎,离'&&/既济/.test(end.hub)&&/未济/.test(end.hub)&&/\/ 24/.test(end.gems),end);
+      check('五境通关：出现结局与八卦方位图（坎、离、乾点亮，中央显示既济、未济），爻玉总数 /30',end.mode==='end'&&end.map.slice().sort().join()===['坎','离','乾'].sort().join()&&/既济/.test(end.hub)&&/未济/.test(end.hub)&&/\/ 30/.test(end.gems),end);
       await p.screenshot({path:path.join(out,'10-end.png')});
       // 考据弹窗
       await p.evaluate(()=>{document.getElementById('end').hidden=true;});await p.click('#btn-lore');await p.waitForTimeout(300);await p.screenshot({path:path.join(out,'11-lore.png')});
@@ -142,7 +149,9 @@ const {route:runRoute}=require('./route.cjs');const {runJiji}=require('./verify-
       await p.click('[data-goto="2"]');await p.waitForTimeout(300);
       check('选关：游戏中可直接跳到第三境',await p.evaluate(()=>__Q.game.levelIndex===2&&__Q.game.mode==='play'&&__Q.level.id==='jiji'));
       await p.click('#btn-levels');await p.waitForTimeout(300);await p.click('[data-goto="3"]');await p.waitForTimeout(300);
-      check('选关：可直接跳到第四境（未济）',await p.evaluate(()=>__Q.game.levelIndex===3&&__Q.level.id==='weiji'&&document.querySelectorAll('#level-list [data-goto]').length===4));
+      check('选关：可直接跳到第四境（未济）',await p.evaluate(()=>__Q.game.levelIndex===3&&__Q.level.id==='weiji'&&document.querySelectorAll('#level-list [data-goto]').length===5));
+      await p.click('#btn-levels');await p.waitForTimeout(300);await p.click('[data-goto="4"]');await p.waitForTimeout(300);
+      check('选关：可直接跳到第五境（乾 · 试玩）',await p.evaluate(()=>__Q.game.levelIndex===4&&__Q.level.id==='qian'));
       await checkCuo(p,check);await checkLife(p,check);await runStuck(p,check);
       await p.click('#btn-home');await p.waitForTimeout(400);
       check('🏠 按钮：游戏中回到开始页面',await p.evaluate(()=>__Q.game.mode==='title'&&!document.getElementById('title').hidden&&__Q.sfx._debug().themeName==='title'));
