@@ -10,6 +10,7 @@ import {buildWeiji} from './levels/weiji.js';
 import {LORE,TRIGRAMS,ABOUT,WORLD_ORDER} from './lore.js';
 import {CODEX,loadSave,writeSave} from './codex.js';
 import {createAudio} from './audio.js';
+import {occ,patchScene} from './occlude.js';
 
 const $=id=>document.getElementById(id);
 const LEVELS=[buildKan,buildLi,buildJiji,buildWeiji];const LEVEL_IDS=['kan','li','jiji','weiji'];
@@ -75,7 +76,7 @@ function loadLevel(i){
     onSlam:(col,still)=>{const p=ctrl.p;mascot.impulse(-6);sfx.thud();burst(new THREE.Vector3(p.x,p.y+.15,p.z),{color:'#e8fbff',n:18,speed:4,up:1.2,life:.6,size:.4,gravity:-1});game.level?.onSlam?.(p,col,still);},
     onLand:(col,impact,hop)=>{mascot.impulse(-Math.min(6,impact*.62));if(!hop&&impact>5){sfx.land(impact);burst(new THREE.Vector3(ctrl.p.x,ctrl.p.y+.05,ctrl.p.z),{color:'#f4ead2',n:8,speed:2,up:.8,life:.4,size:.3});}if(col.bounce){sfx.bounce();burst(new THREE.Vector3(col.x,col.top+.2,col.z),{color:'#ffffff',n:14,speed:2.5,up:1});}game.level?.onLand?.(col,impact);}});
   const ctx={world,kit,physics,scene,toast,sfx,rng,burst,lights:{hemi,sun},camera,envMap,get mascot(){return mascot;},get player(){return ctrl.p;},getForm:()=>game.form,setForm,openLore,unlock,challenge:game.challenge,flags:save.flags,persist};
-  game.level=LEVELS[i](ctx);world.bake();camBlocks=physics.colliders.filter(c=>c.camBlock);cam.k=1;perf.grace=4;/* 静态装饰合并成少数网格 */
+  game.level=LEVELS[i](ctx);world.bake();patchScene(scene,mascot.root);/* 挡视线的东西变半透明 */camBlocks=physics.colliders.filter(c=>c.camBlock);cam.k=1;perf.grace=4;/* 静态装饰合并成少数网格 */
   const L=game.level;mascot.setTrigram(L.lines);
   ctrl.place(L.spawn.x,L.spawn.y,L.spawn.z,L.spawn.yaw);Object.assign(prevP,{x:L.spawn.x,y:L.spawn.y,z:L.spawn.z,yaw:L.spawn.yaw});
   try{renderer.compile(scene,camera);}catch{}/* 进关时一次编好所有着色器，别在路上边走边编、一卡一卡 */
@@ -281,7 +282,7 @@ function render(dt){
     const f=cam.focus,P=camera.position,inside=t=>{const x=f.x+(P.x-f.x)*t,y=f.y+(P.y-f.y)*t,z=f.z+(P.z-f.z)*t;for(const c of camBlocks)if(y<c.top+.3&&y>c.bottom-.3&&physics.contains(c,x,z,.45))return true;return false;};
     let k=1;if(inside(1)){let lo=.1,hi=1;for(let i=0;i<10;i++){const m=(lo+hi)/2;if(inside(m))hi=m;else lo=m;}k=lo;}
     const ck=cam.k??1;cam.k=ck+(k-ck)*Math.min(1,dt*(k<ck?14:3));P.lerpVectors(f,P,Math.max(.1,cam.k));}
-  if(game.level.camMaxY){const my=game.level.camMaxY(p);if(camera.position.y>my)camera.position.y=my;}camera.lookAt(cam.focus);
+  if(game.level.camMaxY){const my=game.level.camMaxY(p);if(camera.position.y>my)camera.position.y=my;}camera.lookAt(cam.focus);occ.cam.value.copy(camera.position);occ.tgt.value.set(p.x,p.y+.6,p.z);occ.on.value=game.mode==='play'?1:0;
   if(game.mode==='title'){const r={width:stage.clientWidth,height:stage.clientHeight},wide=r.width>760;camera.setViewOffset(r.width,r.height,wide?-r.width*.2:0,wide?0:r.height*.3,r.width,r.height);}
   sun.position.set(p.x-12,p.y+22,p.z+8);sun.target.position.set(p.x,p.y,p.z);
   world.sky.position.copy(camera.position);
