@@ -18,7 +18,17 @@ export function createPhysics(){
   function blocked(x,z,y,rad=.3,h=.8){for(const c of colliders){if(c.top<=y+STEP||c.bottom>=y+h)continue;if(c.pass&&c.pass===state.form)continue;if(contains(c,x,z,rad))return c;}return null;}
   // 头顶最低的物体底面（水中上浮时撞洞顶）：只算底面高于 y 的
   function ceilingAt(x,z,y,rad=.25){let best=Infinity;for(const c of colliders){if(c.bottom<=y||c.bottom>=best||c.noGround)continue;if(contains(c,x,z,rad))best=c.bottom;}return best;}
-  return {colliders,add,remove,groundAt,blocked,contains,ceilingAt,state};
+  // 身体和障碍物重叠时，推到最近的边外面。
+  // 以前一旦重叠（比如二段跳从上面落到细树干的边上：站不上去、人却已经进了挡人的范围），往哪走都算"撞墙"，就永远卡住了
+  function pushOut(o,rad=.3,h=.8){for(let it=0;it<3;it++){let moved=false;
+    for(const c of colliders){if(c.disabled||c.top<=o.y+STEP||c.bottom>=o.y+h)continue;if(c.pass&&c.pass===state.form)continue;if(!contains(c,o.x,o.z,rad))continue;
+      if(c.kind==='cyl'){let dx=o.x-c.x,dz=o.z-c.z,l=Math.hypot(dx,dz);if(l<1e-4){dx=-(o.vx||0);dz=-(o.vz||0);l=Math.hypot(dx,dz);if(l<1e-4){dx=1;dz=0;l=1;}}const R=c.r+rad+.02;o.x=c.x+dx/l*R;o.z=c.z+dz/l*R;}
+      else{let lx=o.x-c.x,lz=o.z-c.z;const cs=Math.cos(c.rot||0),sn=Math.sin(c.rot||0);if(c.rot){const rx=lx*cs-lz*sn,rz=lx*sn+lz*cs;lx=rx;lz=rz;}
+        const px=c.hw+rad+.02-Math.abs(lx),pz=c.hd+rad+.02-Math.abs(lz);if(px<pz)lx=Math.sign(lx||1)*(c.hw+rad+.02);else lz=Math.sign(lz||1)*(c.hd+rad+.02);
+        if(c.rot){const rx=lx*cs+lz*sn,rz=-lx*sn+lz*cs;lx=rx;lz=rz;}o.x=c.x+lx;o.z=c.z+lz;}
+      moved=true;}
+    if(!moved)return;}}
+  return {colliders,add,remove,groundAt,blocked,contains,ceilingAt,pushOut,state};
 }
 
 // 玩家控制器：加速/减速、走路自动小跳、跳跃（含二段跳、土狼时间、输入缓冲）、移动平台跟随
@@ -26,6 +36,9 @@ export function createController({physics,onLand,onHop,onJump,onSlam}){
   const p={swim:false,ceilY:Infinity,breachY:Infinity,flowX:0,flowY:0,flowZ:0,canSlam:false,slamming:false,slamReq:false,lastTap:-9,t:0,x:0,y:0,z:0,vx:0,vy:0,vz:0,yaw:0,grounded:false,ground:null,coyote:0,buffer:0,jumps:0,hopT:0,checkpoint:{x:0,y:0,z:0},airTime:0,speedMul:1,noDouble:false,stun:0};
   const SPEED=5,ACCEL=26,DECEL=30,GRAV=24,JUMP=8.2,JUMP2=7,HOP=3.1;
   function place(x,y,z,yaw=p.yaw){Object.assign(p,{x,y,z,vx:0,vy:0,vz:0,yaw,grounded:false,ground:null,jumps:0});p.checkpoint={x,y,z};}
+  // 最近站稳过的几个安全位置（每隔 1.2 米记一个），给「复位」用
+  p.spots=[];
+  function saveSpot(){p.checkpoint={x:p.x,y:p.y,z:p.z};const l=p.spots[p.spots.length-1];if(!l||Math.hypot(l.x-p.x,l.z-p.z)>1.2||Math.abs(l.y-p.y)>.6){p.spots.push({x:p.x,y:p.y,z:p.z,yaw:p.yaw});if(p.spots.length>12)p.spots.shift();}}
   // 水中：按住「跳」上浮、松开缓缓下沉；没有自动小跳。水流（flowX/Y/Z）由关卡每帧设定，直接叠加到位移上。
   // 「震」：空中连按两下跳（或 F / 「震」键）向下猛砸，落地时回调 onSlam。
   const SW_SPEED=4.2,SW_ACC=11,SW_DEC=6,SW_UP=17,SW_SINK=5.5,SW_MAXUP=4.2,SW_MAXDOWN=3.6;
@@ -33,6 +46,7 @@ export function createController({physics,onLand,onHop,onJump,onSlam}){
     p.t+=dt;
     if(p.grounded&&p.ground){p.x+=p.ground.dx;p.z+=p.ground.dz;p.y+=p.ground.dy;}
     if(p.stun>0){p.stun-=dt;input={x:0,z:0,jump:false,up:false};}
+    physics.pushOut(p);
     const sp=SW_SPEED*p.speedMul,len=Math.hypot(input.x,input.z),tx=len?input.x/Math.max(1,len)*sp:0,tz=len?input.z/Math.max(1,len)*sp:0;
     const a=(len?SW_ACC:SW_DEC)*dt*(p.stun>0?0:1);
     const ax=tx-p.vx,az=tz-p.vz,al=Math.hypot(ax,az);if(al<=a){p.vx=tx;p.vz=tz;}else{p.vx+=ax/al*a;p.vz+=az/al*a;}
@@ -63,7 +77,7 @@ export function createController({physics,onLand,onHop,onJump,onSlam}){
       if(!wasGrounded){p.grounded=true;p.ground=g.col;p.jumps=0;if(p.slamming){p.slamming=false;onSlam?.(g.col,false);}else onLand?.(g.col,Math.min(impact,3),true);
         if(g.col.bounce&&!p.slamming){p.vy=g.col.bounce;p.grounded=false;p.ground=null;}/* 海葵：弹起来 */}
       else p.ground=g.col;
-      if(g.col.safe&&!g.col.dx&&!g.col.dz&&!g.col.dy)p.checkpoint={x:p.x,y:p.y,z:p.z};
+      if(g.col.safe&&!g.col.dx&&!g.col.dz&&!g.col.dy)saveSpot();
     }else{p.grounded=false;p.ground=null;}
     p.airTime=p.grounded?0:p.airTime+dt;
   }
@@ -75,6 +89,7 @@ export function createController({physics,onLand,onHop,onJump,onSlam}){
     // 水平速度
     // 被撞后的短暂硬直：不接受输入，保留击退速度
     if(p.stun>0){p.stun-=dt;input={x:0,z:0,jump:false};}
+    physics.pushOut(p);/* 和障碍物重叠：先推出来，不会卡死 */
     const sp=SPEED*p.speedMul,len=Math.hypot(input.x,input.z),tx=len?input.x/Math.max(1,len)*sp:0,tz=len?input.z/Math.max(1,len)*sp:0;
     const a=(len?ACCEL:DECEL)*(p.grounded?1:.55)*dt*(p.stun>0?0:1);
     const ax=tx-p.vx,az=tz-p.vz,al=Math.hypot(ax,az);if(al<=a){p.vx=tx;p.vz=tz;}else{p.vx+=ax/al*a;p.vz+=az/al*a;}
@@ -108,7 +123,7 @@ export function createController({physics,onLand,onHop,onJump,onSlam}){
       if(!wasGrounded){p.grounded=true;p.ground=g.col;p.jumps=0;onLand?.(g.col,impact,p.hopping&&input.jump!==true);p.hopping=false;
         if(g.col.bounce){p.vy=g.col.bounce;p.grounded=false;p.jumps=1;}}
       else{p.ground=g.col;}
-      if(p.grounded&&g.col.safe&&!g.col.dx&&!g.col.dz&&!g.col.dy)p.checkpoint={x:p.x,y:p.y,z:p.z};
+      if(p.grounded&&g.col.safe&&!g.col.dx&&!g.col.dz&&!g.col.dy)saveSpot();
     }else{
       // 走下台阶时贴地，不是一步跨空
       if(wasGrounded&&g.col&&p.y-g.h<STEP*.6&&p.vy<=0&&!p.hopping){p.y=g.h;p.vy=0;p.ground=g.col;}

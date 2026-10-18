@@ -200,3 +200,7 @@ body.slam #btn-form{background:#a8e3f0}
 
 .shell-icon{font-style:normal;font-size:15px;line-height:1}
 .gems[hidden]{display:none}
+
+/* 复位键：卡住时闪一闪提醒 */
+#btn-reset.nudge{animation:nudge 1s ease-in-out 4;background:#ffe9a8}
+@keyframes nudge{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}

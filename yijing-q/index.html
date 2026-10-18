@@ -25,6 +25,7 @@
       <button id="btn-help" title="操作说明">?</button>
       <button id="btn-music" title="音乐" aria-pressed="true">🎵</button>
       <button id="btn-sound" title="音效" aria-pressed="true">🔊</button>
+      <button id="btn-reset" title="复位：回到刚才站稳的地方，进度都保留（T）">🚩</button>
       <button id="btn-restart" title="重新开始本境">↺</button>
     </nav>
   </header>
@@ -99,7 +100,7 @@
     <div id="level-list" class="level-list"></div></dialog>
   <dialog id="about"><button class="x" data-close aria-label="关闭">×</button><h2>关于考据</h2><div id="about-body"></div><button class="primary" data-close>好</button></dialog>
   <dialog id="help"><button class="x" data-close aria-label="关闭">×</button><h2>怎么玩</h2>
-    <ul class="help"><li><kbd>W A S D</kbd> / 方向键：移动（走路会自己蹦蹦跳跳）</li><li><kbd>空格</kbd>：跳；空中再按一次：二段跳</li><li><kbd>E</kbd>：读石碑、点燃或盖灭火台、拿起 / 放下爻块</li><li><kbd>F</kbd>（触屏「变」）：第三境的水火变身：原形 → 水态 → 火态</li><li>第四境在水下：按住 <kbd>空格</kbd>（触屏按住「跳」）往上游，松开慢慢下沉；到了九四，空中连按两下跳（或 <kbd>F</kbd> / 触屏「震」）向下猛砸</li><li>拖动画面 / <kbd>Q</kbd> <kbd>R</kbd>：转镜头；滚轮：远近</li><li>掉进水里会回到最近站稳的地方（挑战模式回到本境起点）</li><li>每境：先解开卦象，再收集至少 3 枚爻玉，卦门就会亮起</li><li>三颗星：通关、六枚爻玉全收、本境不落水</li><li>「鉴」：图鉴，收集卦象和知识卡</li></ul>
+    <ul class="help"><li><kbd>W A S D</kbd> / 方向键：移动（走路会自己蹦蹦跳跳）</li><li><kbd>空格</kbd>：跳；空中再按一次：二段跳</li><li><kbd>E</kbd>：读石碑、点燃或盖灭火台、拿起 / 放下爻块</li><li><kbd>F</kbd>（触屏「变」）：第三境的水火变身：原形 → 水态 → 火态</li><li>第四境在水下：按住 <kbd>空格</kbd>（触屏按住「跳」）往上游，松开慢慢下沉；到了九四，空中连按两下跳（或 <kbd>F</kbd> / 触屏「震」）向下猛砸</li><li>拖动画面 / <kbd>Q</kbd> <kbd>R</kbd>：转镜头；滚轮：远近</li><li>掉进水里会回到最近站稳的地方（挑战模式回到本境起点）</li><li><kbd>T</kbd> / 右上角 🚩：卡住了就复位，回到刚才站稳的地方，爻玉和已解开的机关都保留；「↺」才是整境重来</li><li>每境：先解开卦象，再收集至少 3 枚爻玉，卦门就会亮起</li><li>三颗星：通关、六枚爻玉全收、本境不落水</li><li>「鉴」：图鉴，收集卦象和知识卡</li></ul>
     <button class="primary" data-close>开始</button></dialog>
   <div id="glnote" role="status" hidden></div>
   <script type="module" src="src/main.js"></script>

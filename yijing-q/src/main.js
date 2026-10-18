@@ -93,6 +93,7 @@ addEventListener('keydown',e=>{if(e.target.closest?.('dialog'))return;keys.add(e
   if((e.code==='Space'||e.code==='KeyK')&&!e.repeat){jumpPressed=true;e.preventDefault();}
   if(e.code==='KeyE'&&!e.repeat)interact();
   if(e.code==='KeyF'&&!e.repeat)formKey();
+  if(e.code==='KeyT'&&!e.repeat)resetToSafe();
   if(e.code==='Escape'){if($('toast').classList.contains('show'))hideToast();closeDialogs();}});
 addEventListener('keyup',e=>keys.delete(e.code));
 addEventListener('blur',()=>{keys.clear();jumpHeld=false;});
@@ -177,6 +178,20 @@ function syncAudioButtons(){$('btn-sound').textContent=sfx.muted?'🔇':'🔊';$
 $('btn-sound').onclick=()=>{sfx.setMuted(!sfx.muted);save.sfx=!sfx.muted;persist();syncAudioButtons();};
 $('btn-music').onclick=()=>{sfx.setMusicMuted(!sfx.musicMuted);save.music=!sfx.musicMuted;persist();syncAudioButtons();};
 $('btn-restart').onclick=()=>{loadLevel(game.levelIndex);toast('重新开始本境。');};
+// 复位（像赛车游戏）：回到最近站稳过、离这里至少 1.5 米、本身不挡人的位置；爻玉、机关、手里的东西都保留
+function resetToSafe(){if(game.mode!=='play')return false;const p=ctrl.p,L=game.level;
+  let spot=null;for(let i=p.spots.length-1;i>=0;i--){const s=p.spots[i];if(Math.hypot(s.x-p.x,s.z-p.z)<1.5)continue;const g=physics.groundAt(s.x,s.z,s.y+.1);if(!g.col||physics.blocked(s.x,s.z,s.y))continue;spot=s;break;}
+  if(!spot)spot={x:L.spawn.x,y:L.spawn.y,z:L.spawn.z,yaw:L.spawn.yaw};
+  ctrl.place(spot.x,spot.y+.15,spot.z,spot.yaw??p.yaw);Object.assign(prevP,{x:spot.x,y:spot.y,z:spot.z});cam.focus.set(spot.x,spot.y+1.1,spot.z);
+  stuck.t=0;stuck.ref=null;$('btn-reset').classList.remove('nudge');mascot.impulse(-3);sfx.portal();burst(new THREE.Vector3(spot.x,spot.y+.5,spot.z),{color:'#ffffff',n:14,speed:2,up:2});
+  toast('已复位到刚才站稳的地方，进度都还在。',2600);return true;}
+$('btn-reset').onclick=()=>resetToSafe();
+// 卡住了自动提示：一直在推方向却几乎没挪动，提示用 🚩 复位
+const stuck={t:0,ref:null,hintAt:-99};
+function watchStuck(dt,input){const p=ctrl.p;if(game.mode!=='play'||Math.hypot(input.x,input.z)<.3||p.stun>0){stuck.t=0;stuck.ref=null;return;}
+  if(!stuck.ref){stuck.ref={x:p.x,y:p.y,z:p.z};stuck.t=0;}stuck.t+=dt;
+  if(Math.hypot(p.x-stuck.ref.x,p.z-stuck.ref.z)>.5||Math.abs(p.y-stuck.ref.y)>.8){stuck.ref=null;return;}
+  if(stuck.t>2.6&&game.time-stuck.hintAt>20){stuck.hintAt=game.time;$('btn-reset').classList.remove('nudge');void $('btn-reset').offsetWidth;$('btn-reset').classList.add('nudge');toast('卡住了？点右上角的 🚩 复位，回到刚才站稳的地方（进度都保留）。',5200);}}
 function closeDialogs(){document.querySelectorAll('dialog[open]').forEach(d=>d.close());}
 document.querySelectorAll('dialog').forEach(d=>d.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>d.close()));
 
@@ -239,6 +254,7 @@ function step(dt){
   prevP.x=p.x;prevP.y=p.y;prevP.z=p.z;prevP.yaw=p.yaw;
   L.update(dt,game.time,p);
   ctrl.update(dt,input);
+  watchStuck(dt,input);
   if(p.y<L.killY){
     game.falls++;game.levelFalls++;sfx.splash();sfx.fall();burst(new THREE.Vector3(p.x,-.5,p.z),{color:'#e9fbff',n:18,speed:3,up:4});L.onFall?.();
     const c=game.challenge?{x:L.spawn.x,y:L.spawn.y,z:L.spawn.z}:p.checkpoint;ctrl.place(c.x,c.y+.3,c.z,p.yaw);mascot.impulse(-3);if(game.challenge)toast('挑战模式：落水回到本境起点。');}
@@ -309,7 +325,7 @@ window.__Q={
   get game(){return game;},get level(){return game.level;},get player(){return ctrl.p;},get mascot(){return mascot;},get physics(){return physics;},camera,renderer,cam,save,sfx,
   start:startGame,loadLevel,openLevels,selectCharacter,openCodex,unlock,setChallenge,showTitle,setForm,cycleForm,nearestInteractable,
   step(seconds,{keys:k=[],jump=false,move=null,up=false,draw=true}={}){k.forEach(c=>keys.add(c));testMove=move;testUp=up;let first=true,n=0;for(let t=0;t<seconds-1e-9;t+=FIXED){if(first&&jump)jumpPressed=true;first=false;step(FIXED);if(++n%2===0&&game.level.frame)game.level.frame(FIXED*2,game.time,interp());}testMove=null;testUp=false;k.forEach(c=>keys.delete(c));if(draw){render(1/60);updateHud(true);}},
-  jump(){jumpPressed=true;},interact,toast,slam(){formKey();},
+  jump(){jumpPressed=true;},interact,toast,resetToSafe,slam(){formKey();},
   teleport(x,y,z){ctrl.place(x,y,z);Object.assign(prevP,{x,y,z});},
   render(dt=1/60){render(dt);updateHud(true);},manual:false,tick,
   ready:true,

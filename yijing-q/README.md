@@ -27,6 +27,7 @@ npm run verify     # 自动验证（需先 build）：不瞬移，真实走跳�
 | 水下上浮（第四境） | 按住空格（松开下沉） | 按住「跳」 |
 | 震：向下猛砸（第四境九四起） | 空中连按两下空格，或 F | 「震」 |
 | 转镜头 / 远近 | 拖动、Q R / 滚轮 | 右侧拖动 |
+| 复位（卡住时回到刚才站稳的地方，进度保留） | T | 右上角 🚩 |
 | 选关 | 右上角「关」，或标题页"直接选关" | 同左 |
 
 ## 内容
@@ -107,7 +108,7 @@ npm run verify     # 自动验证（需先 build）：不瞬移，真实走跳�
 
 ## 验证结果
 
-`npm run verify` 共 79 项检查，全部通过（第四境另可单独运行 `node tools/verify-weiji.cjs`）。报告见 `docs/verification/verify-report.json`，日志见 `verify.log`，截图在 `docs/verification/`。
+`npm run verify` 共 85 项检查，全部通过（第四境另可单独运行 `node tools/verify-weiji.cjs`）。报告见 `docs/verification/verify-report.json`，日志见 `verify.log`，截图在 `docs/verification/`。
 
 验证方式是：**不瞬移，按真实路线自动走、跳、变身、搬运、游水，打通四境**。覆盖的内容有：
 - 四个角色的手感与能力一致性；
@@ -141,5 +142,5 @@ src/fox.js                      第四境的小狐狸（骨骼动作）
 src/lore.js  src/codex.js       考据与图鉴
 src/audio.js                    合成音乐与音效（五声音阶调式）
 vendor/                         Three.js r179（three@0.179.1）+ LICENSE
-tools/verify.cjs                完整自动验证；tools/verify-jiji.cjs 第三境路线；tools/verify-weiji.cjs 第四境路线（水下航点）；tools/route.cjs 自动走位
+tools/verify.cjs                完整自动验证；tools/verify-jiji.cjs 第三境路线；tools/verify-weiji.cjs 第四境路线（水下航点）；tools/verify-stuck.cjs 防卡死（四境所有细障碍物）与复位；tools/route.cjs 自动走位
 ```
